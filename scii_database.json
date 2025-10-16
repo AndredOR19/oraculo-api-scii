@@ -1,0 +1,174 @@
+{
+  "regras_diagnostico": [
+    {
+      "queixa": "Comunicação bloqueada / Dificuldade de expressão.",
+      "palavras_chave": ["expressar", "comunicação", "fala", "bloqueada"],
+      "letra": "Peh",
+      "insight": "A dificuldade de expressão está ligada à dinâmica de Peh, o Verbo que tem o poder de construir ou destruir. Pode indicar um desequilíbrio no uso da palavra ou um medo inconsciente do poder que sua fala carrega.",
+      "pratica": "Vocalize o mantra da letra Peh para realinhar seu centro de comunicação. Medite sobre a intenção por trás de suas palavras antes de falar. Pratique o exercício do 'Falar Verdadeiro': expresse uma pequena verdade que você tem guardado."
+    },
+    {
+      "queixa": "Ansiedade / Excesso de pensamentos.",
+      "palavras_chave": ["ansiedade", "pensamentos", "mente", "preocupação", "excesso", "caos", "respiração"],
+      "letra": "Aleph",
+      "insight": "Aleph é o Sopro Primordial, o elemento Ar, a mente antes da forma. A ansiedade é o 'ar' em turbulência, pensamentos caóticos que não encontram um corpo para se manifestar de forma ordenada. É a potência do mental sem a direção da vontade, resultando em uma perda de controle sobre o próprio sopro vital.",
+      "pratica": "Pratique a 'Respiração Consciente'. Sente-se em silêncio por 3 minutos. Inspire lentamente contando até 4, sentindo o ar (Aleph) preencher os pulmões. Segure por 4 tempos. Expire lentamente por 6 tempos, liberando toda a agitação. Concentre-se apenas no fluxo do ar entrando e saindo."
+    },
+    {
+      "queixa": "Falta de propósito / Desconexão espiritual.",
+      "palavras_chave": ["propósito", "desconexão", "caminho", "espiritual", "vazio", "sentido", "intuição"],
+      "letra": "Vav",
+      "insight": "Vav é o Conector, a ponte que une o Céu (Yod) e a Terra (Heh). A falta de propósito é um 'Vav' enfraquecido; a comunicação entre seu eu superior e sua consciência diária está obstruída. A inspiração divina não desce para o plano da ação, gerando um sentimento de vazio e de caminhar sem direção.",
+      "pratica": "Meditação do 'Pilar de Luz'. De pé, com a coluna reta, visualize um gancho (Vav) de luz descendo do céu e se conectando ao topo da sua cabeça. Sinta essa luz descer por toda a sua espinha, alinhando e fortalecendo sua conexão interna."
+    },
+    {
+      "queixa": "Estagnação / Dificuldade de iniciar projetos.",
+      "palavras_chave": ["estagnação", "procrastinação", "inércia", "começar", "projeto", "iniciativa", "parado"],
+      "letra": "Yod",
+      "insight": "Yod é a Semente Divina, a faísca da Vontade, o ponto de partida de toda manifestação. A estagnação ocorre quando o Yod, a 'mão que semeia', está fechada. O potencial criativo existe, mas o ato de 'lançar a semente' no mundo está bloqueado.",
+      "pratica": "O 'Ato Mínimo de Criação'. Escolha o projeto que está parado. Realize a menor ação possível para iniciá-lo: escreva uma única frase, envie um único e-mail, desenhe o primeiro esboço. O objetivo é ativar o Yod."
+    },
+    {
+      "queixa": "Baixa autoestima / Falta de autoconfiança.",
+      "palavras_chave": ["autoestima", "confiança", "valor", "insegurança", "poder pessoal", "força"],
+      "letra": "Samekh",
+      "insight": "Samekh é o Suporte, a estrutura que nos sustenta, a espinha dorsal da psique. A baixa autoestima é um 'Samekh' fraco; a estrutura interna não consegue sustentar o peso da própria identidade e se curva sob a pressão externa. Falta o pilar que nos permite confiar na nossa própria base.",
+      "pratica": "O 'Exercício da Postura'. Por um dia, preste atenção consciente à sua postura. Ande e sente-se com a coluna ereta, ombros para trás, queixo paralelo ao chão. A reestruturação física do Samekh (espinha) envia uma mensagem direta à sua psique."
+    }
+  ],
+  "letras": {
+    "Aleph": {
+      "nome_hebraico": "Aleph", "caractere": "א", "valor_gematrico": 1, "pictograma": "Touro", "mae": "Ar",
+      "corpo_do_verbo": "Pulmões", "funcao_corporal": "Respiração, Sopro Vital", "tarot": "O Louco",
+      "conceito_chave": "O Sopro Primordial, Potencial Ilimitado, O Princípio Não-Manifesto.",
+      "pratica_associada": "Respiração Consciente."
+    },
+    "Bet": {
+      "nome_hebraico": "Bet", "caractere": "ב", "valor_gematrico": 2, "pictograma": "Casa", "planeta": "Mercúrio",
+      "corpo_do_verbo": "Estômago", "funcao_corporal": "Digestão, Assimilação", "tarot": "O Mago",
+      "conceito_chave": "Dualidade, O Templo, Interioridade, O Vaso para a Luz.",
+      "pratica_associada": "Meditação sobre o corpo como um Templo Sagrado."
+    },
+    "Gimel": {
+      "nome_hebraico": "Gimel", "caractere": "ג", "valor_gematrico": 3, "pictograma": "Camelo", "planeta": "Lua",
+      "corpo_do_verbo": "Pés e Pernas", "funcao_corporal": "Locomoção, Jornada", "tarot": "A Sacerdotisa",
+      "conceito_chave": "Movimento, Transição, a Ponte entre opostos.",
+      "pratica_associada": "Caminhada meditativa."
+    },
+    "Dalet": {
+      "nome_hebraico": "Dalet", "caractere": "ד", "valor_gematrico": 4, "pictograma": "Porta", "planeta": "Vênus",
+      "corpo_do_verbo": "Mão Direita", "funcao_corporal": "Dar, Estruturar", "tarot": "A Imperatriz",
+      "conceito_chave": "Estrutura, Estabilidade, Abertura, Humildade.",
+      "pratica_associada": "Praticar atos de generosidade."
+    },
+    "He": {
+      "nome_hebraico": "He", "caractere": "ה", "valor_gematrico": 5, "pictograma": "Janela", "zodiaco": "Áries",
+      "corpo_do_verbo": "Olhos", "funcao_corporal": "Visão, Revelação", "tarot": "O Imperador",
+      "conceito_chave": "Expressão, A Janela da Alma, Revelar o Oculto.",
+      "pratica_associada": "Contemplação silenciosa de uma paisagem."
+    },
+    "Vav": {
+      "nome_hebraico": "Vav", "caractere": "ו", "valor_gematrico": 6, "pictograma": "Prego/Gancho", "zodiaco": "Touro",
+      "corpo_do_verbo": "Coluna Vertebral", "funcao_corporal": "Conexão, Sustentação", "tarot": "O Hierofante",
+      "conceito_chave": "O Conector, a Ponte entre Céu e Terra, Continuidade.",
+      "pratica_associada": "Meditação do 'Pilar de Luz'."
+    },
+    "Zayin": {
+      "nome_hebraico": "Zayin", "caractere": "ז", "valor_gematrico": 7, "pictograma": "Espada", "zodiaco": "Gêmeos",
+      "corpo_do_verbo": "Braços", "funcao_corporal": "Ação, Decisão, Defesa", "tarot": "Os Amantes",
+      "conceito_chave": "Escolha, Discernimento, Vontade Direcionada.",
+      "pratica_associada": "Tomar uma pequena decisão que vinha sendo adiada."
+    },
+    "Het": {
+      "nome_hebraico": "Het", "caractere": "ח", "valor_gematrico": 8, "pictograma": "Cerca", "zodiaco": "Câncer",
+      "corpo_do_verbo": "Pele", "funcao_corporal": "Proteção, Limites", "tarot": "A Carruagem",
+      "conceito_chave": "Limites, Proteção, Força Interior, Superação.",
+      "pratica_associada": "Visualizar uma barreira de luz protetora ao redor do corpo."
+    },
+    "Tet": {
+      "nome_hebraico": "Tet", "caractere": "ט", "valor_gematrico": 9, "pictograma": "Serpente", "zodiaco": "Leão",
+      "corpo_do_verbo": "Intestinos", "funcao_corporal": "Metabolismo, Energia Kundalini", "tarot": "A Força",
+      "conceito_chave": "Energia Vital, Sabedoria Oculta, o Bem dentro do Mal.",
+      "pratica_associada": "Focar na energia do plexo solar, visualizando-a como uma serpente de fogo."
+    },
+    "Yod": {
+      "nome_hebraico": "Yod", "caractere": "י", "valor_gematrico": 10, "pictograma": "Mão/Semente", "zodiaco": "Virgem",
+      "corpo_do_verbo": "Mão Esquerda", "funcao_corporal": "Receber, Potencial", "tarot": "O Eremita",
+      "conceito_chave": "A Semente Divina, o Ponto de Partida, a Faísca Criativa.",
+      "pratica_associada": "O 'Ato Mínimo de Criação'."
+    },
+    "Kaf": {
+      "nome_hebraico": "Kaf", "caractere": "כ", "valor_gematrico": 20, "pictograma": "Palma da Mão", "planeta": "Júpiter",
+      "corpo_do_verbo": "Fígado", "funcao_corporal": "Expansão, Vitalidade", "tarot": "A Roda da Fortuna",
+      "conceito_chave": "Ciclos, Realização, a capacidade de moldar a realidade.",
+      "pratica_associada": "Escrever um plano ou projeto, moldando as ideias na matéria."
+    },
+    "Lamed": {
+      "nome_hebraico": "Lamed", "caractere": "ל", "valor_gematrico": 30, "pictograma": "Aguilhão de Boi", "zodiaco": "Libra",
+      "corpo_do_verbo": "Coração", "funcao_corporal": "Impulso, Vontade do Coração", "tarot": "A Justiça",
+      "conceito_chave": "Instrução, o Impulso para Aprender e Agir, Equilíbrio.",
+      "pratica_associada": "Perguntar ao coração qual é a ação justa a ser tomada."
+    },
+    "Mem": {
+      "nome_hebraico": "Mem", "caractere": "מ", "valor_gematrico": 40, "pictograma": "Água", "mae": "Água",
+      "corpo_do_verbo": "Sangue e Fluidos", "funcao_corporal": "Fluxo, Emoções", "tarot": "O Enforcado",
+      "conceito_chave": "As Águas Primordiais, o Inconsciente, o Fluxo da Vida.",
+      "pratica_associada": "Beber um copo de água com intenção e consciência."
+    },
+    "Nun": {
+      "nome_hebraico": "Nun", "caractere": "נ", "valor_gematrico": 50, "pictograma": "Peixe/Semente", "zodiaco": "Escorpião",
+      "corpo_do_verbo": "Sistema Reprodutor", "funcao_corporal": "Transformação, DNA", "tarot": "A Morte",
+      "conceito_chave": "Regeneração, o que se move através das profundezas, a alma.",
+      "pratica_associada": "Meditar sobre o desapego e a transformação."
+    },
+    "Samekh": {
+      "nome_hebraico": "Samekh", "caractere": "ס", "valor_gematrico": 60, "pictograma": "Apoio", "zodiaco": "Sagitário",
+      "corpo_do_verbo": "Esqueleto", "funcao_corporal": "Sustentação, Estrutura", "tarot": "A Temperança",
+      "conceito_chave": "Suporte, Estrutura, Confiança, a Espinha Dorsal do Ser.",
+      "pratica_associada": "O 'Exercício da Postura'."
+    },
+    "Ayin": {
+      "nome_hebraico": "Ayin", "caractere": "ע", "valor_gematrico": 70, "pictograma": "Olho", "zodiaco": "Capricórnio",
+      "corpo_do_verbo": "Olho Interior / Pineal", "funcao_corporal": "Intuição, Percepção Sutil", "tarot": "O Diabo",
+      "conceito_chave": "Percepção além da matéria, quebrar ilusões, a fonte interior.",
+      "pratica_associada": "Meditação no escuro, focando no 'terceiro olho'."
+    },
+    "Peh": {
+      "nome_hebraico": "Peh", "caractere": "פ", "valor_gematrico": 80, "pictograma": "Boca", "planeta": "Marte",
+      "corpo_do_verbo": "Boca", "funcao_corporal": "A Fala, O Verbo", "tarot": "A Torre",
+      "conceito_chave": "A Palavra que cria e destrói, comunicação, quebra de estruturas.",
+      "pratica_associada": "Vocalização de mantras."
+    },
+    "Tzadi": {
+      "nome_hebraico": "Tzadi", "caractere": "צ", "valor_gematrico": 90, "pictograma": "Anzol", "zodiaco": "Aquário",
+      "corpo_do_verbo": "Pescoço e Nuca", "funcao_corporal": "Conexão Mente-Corpo", "tarot": "A Estrela",
+      "conceito_chave": "A busca pela verdade, a 'pesca' de insights, esperança.",
+      "pratica_associada": "Alongar suavemente o pescoço, liberando a tensão entre a mente e o corpo."
+    },
+    "Kof": {
+      "nome_hebraico": "Kof", "caractere": "ק", "valor_gematrico": 100, "pictograma": "Nuca/Fundo da Cabeça", "zodiaco": "Peixes",
+      "corpo_do_verbo": "Cerebelo / Inconsciente", "funcao_corporal": "Processos Automáticos, Sonhos", "tarot": "A Lua",
+      "conceito_chave": "O Subconsciente, os ciclos de sono e vigília, o Sol da Meia-Noite.",
+      "pratica_associada": "Manter um diário de sonhos."
+    },
+    "Resh": {
+      "nome_hebraico": "Resh", "caractere": "ר", "valor_gematrico": 200, "pictograma": "Cabeça", "planeta": "Sol",
+      "corpo_do_verbo": "Cérebro / Consciência", "funcao_corporal": "Raciocínio, Cognição", "tarot": "O Sol",
+      "conceito_chave": "A Mente Consciente, o Intelecto, a Clareza, o Princípio Cósmico.",
+      "pratica_associada": "Resolver um problema ou quebra-cabeça."
+    },
+    "Shin": {
+      "nome_hebraico": "Shin", "caractere": "ש", "valor_gematrico": 300, "pictograma": "Dente", "mae": "Fogo",
+      "corpo_do_verbo": "Sistema Nervoso", "funcao_corporal": "Energia, Atividade", "tarot": "O Julgamento",
+      "conceito_chave": "O Fogo Divino, Transformação, o Espírito Santo.",
+      "pratica_associada": "Meditação na chama de uma vela."
+    },
+    "Tav": {
+      "nome_hebraico": "Tav", "caractere": "ת", "valor_gematrico": 400, "pictograma": "Cruz/Marca", "planeta": "Saturno",
+      "corpo_do_verbo": "Corpo Inteiro", "funcao_corporal": "Manifestação Final, o Templo", "tarot": "O Mundo",
+      "conceito_chave": "A Obra Completa, a Marca da Aliança, a Verdade, a Perfeição do Universo.",
+      "pratica_associada": "Sentir o corpo como um todo unificado, um microcosmo do universo."
+    }
+  },
+  "insights_validados": []
+}
