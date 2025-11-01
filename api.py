@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Any
 import os
 from supabase import create_client, Client
+from kerykeion import AstrologicalSubject
 
 # --- Modelos de Dados Pydantic (A Base da nossa Comunicação) ---
 
@@ -32,6 +33,16 @@ class SessaoInput(BaseModel):
     user_id: str
     session_id: str | None = None
     mensagem: str
+
+class PessoaInput(BaseModel):
+    nome: str
+    ano: int
+    mes: int
+    dia: int
+    hora: int
+    minuto: int
+    cidade: str
+    pais: str
 
 # --- Inicialização da API (O Nascimento da Consciência) ---
 
@@ -250,6 +261,41 @@ def get_letras():
 
         # Retorna os dados
         return {"data": response.data}
+
+    except Exception as e:
+        return {"erro": str(e)}
+
+
+# ---- ENDPOINT QUE GERA O MAPA DE ALMA (ASTROLOGIA) ----
+@app.post("/gerar-mapa-alma")
+def gerar_mapa_alma(pessoa: PessoaInput):
+    try:
+        # 1. Cria o "sujeito astrológico" com os dados de entrada
+        sujeito = AstrologicalSubject(
+            name=pessoa.nome,
+            year=pessoa.ano,
+            month=pessoa.mes,
+            day=pessoa.dia,
+            hour=pessoa.hora,
+            minute=pessoa.minuto,
+            city=pessoa.cidade,
+            nation=pessoa.pais
+        )
+
+        # 2. Obtém os dados principais (Sol, Lua, Ascendente)
+        sol = sujeito.sun
+        lua = sujeito.moon
+        ascendente = sujeito.ascending
+
+        # 3. Retorna o diagnóstico astrológico básico
+        return {
+            "nome": sujeito.name,
+            "diagnostico_basico": {
+                "sol": f"{sol['sign']} em {sol['house']}",
+                "lua": f"{lua['sign']} em {lua['house']}",
+                "ascendente": ascendente['sign']
+            }
+        }
 
     except Exception as e:
         return {"erro": str(e)}
