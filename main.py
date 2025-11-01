@@ -3,6 +3,7 @@
 import json
 import uuid
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any
 
@@ -36,6 +37,14 @@ app = FastAPI(
     title="Cérebro da Kabbalah das Águas Primordiais",
     description="Uma API para fornecer insights, diagnósticos e guia terapêutico-arquetípico.",
     version="2.0.0" # Versão Restaurada e Completa
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite que QUALQUER site acesse sua API
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos os métodos (GET, POST, etc)
+    allow_headers=["*"],  # Permite todos os cabeçalhos
 )
 
 # --- Carregamento da Memória (O Conhecimento Primordial) ---
