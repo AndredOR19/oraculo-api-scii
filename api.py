@@ -6,6 +6,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any
+import os
+from supabase import create_client, Client
 
 # --- Modelos de Dados Pydantic (A Base da nossa Comunicação) ---
 
@@ -46,6 +48,11 @@ app.add_middleware(
     allow_methods=["*"],  # Permite todos os métodos (GET, POST, etc)
     allow_headers=["*"],  # Permite todos os cabeçalhos
 )
+
+# --- Conexão com o Supabase (A Fonte da Memória de Longo Prazo) ---
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # --- Carregamento da Memória (O Conhecimento Primordial) ---
 
@@ -232,3 +239,17 @@ async def sessao_terapeutica(input: SessaoInput):
 
     else:
         raise HTTPException(status_code=400, detail="Estado de sessão inválido.")
+
+
+# ---- ENDPOINT QUE CONSULTA AS LETRAS (A GNOSE) ----
+@app.get("/letras")
+def get_letras():
+    try:
+        # Consulta a tabela 'letras' que criamos no Supabase
+        response = supabase.table('letras').select('*').execute()
+
+        # Retorna os dados
+        return {"data": response.data}
+
+    except Exception as e:
+        return {"erro": str(e)}
