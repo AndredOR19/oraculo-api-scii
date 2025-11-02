@@ -1,24 +1,35 @@
-# main.py - Versão 2.0 - Restauração Completa do Mestre
+import os
+import sys # Adicionamos sys para garantir que o caminho esteja pronto
 
+# --- CONFIGURAÇÃO DE CACHE PARA O VERCEL (DEVE VIR ANTES DE IMPORTAR KERYKEION) ---
+KERYKEION_CACHE_PATH = '/tmp/kerykeion_cache'
+
+# Verifica se o diretório existe, se não, cria
+if not os.path.exists(KERYKEION_CACHE_PATH):
+    try:
+        os.makedirs(KERYKEION_CACHE_PATH)
+    except OSError as e:
+        # Em um ambiente serverless, múltiplos "workers" podem tentar criar ao mesmo tempo
+        # Ignoramos o erro se ele for "File exists"
+        if e.errno != 17: # 17 = File exists
+            print(f"Erro ao criar diretório de cache: {e}", file=sys.stderr)
+
+# Define a variável de ambiente ANTES que o kerykeion seja importado
+os.environ['KERYKEION_CACHE_DIR'] = KERYKEION_CACHE_PATH
+# --- FIM DO BLOCO DE CONFIGURAÇÃO DE CACHE ---
+
+
+# --- AGORA O RESTO DAS SUAS IMPORTAÇÕES ---
 import json
 import uuid
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any
-import os
 from supabase import create_client, Client
 from kerykeion import AstrologicalSubject
 
-# --- CONFIGURAÇÃO DE CACHE PARA O VERCEL (Início do Bloco) ---
-# Kerykeion tenta escrever em '/var/task/cache', que é 'Read-only'.
-# Nós o forçamos a usar o único diretório 'escrevível' no Vercel: /tmp
-# O 'import os' já deve estar no topo do seu arquivo.
-KERYKEION_CACHE_PATH = '/tmp/kerykeion_cache'
-if not os.path.exists(KERYKEION_CACHE_PATH):
-    os.makedirs(KERYKEION_CACHE_PATH)
-os.environ['KERYKEION_CACHE_DIR'] = KERYKEION_CACHE_PATH
-# --- (Fim do Bloco) ---
+
 
 # --- Modelos de Dados Pydantic (A Base da nossa Comunicação) ---
 
