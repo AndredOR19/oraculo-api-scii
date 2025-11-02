@@ -10,6 +10,16 @@ import os
 from supabase import create_client, Client
 from kerykeion import AstrologicalSubject
 
+# --- CONFIGURAÇÃO DE CACHE PARA O VERCEL (Início do Bloco) ---
+# Kerykeion tenta escrever em '/var/task/cache', que é 'Read-only'.
+# Nós o forçamos a usar o único diretório 'escrevível' no Vercel: /tmp
+# O 'import os' já deve estar no topo do seu arquivo.
+KERYKEION_CACHE_PATH = '/tmp/kerykeion_cache'
+if not os.path.exists(KERYKEION_CACHE_PATH):
+    os.makedirs(KERYKEION_CACHE_PATH)
+os.environ['KERYKEION_CACHE_DIR'] = KERYKEION_CACHE_PATH
+# --- (Fim do Bloco) ---
+
 # --- Modelos de Dados Pydantic (A Base da nossa Comunicação) ---
 
 class GematriaInput(BaseModel):
