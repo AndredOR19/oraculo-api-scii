@@ -12,7 +12,7 @@ os.makedirs(cache_dir, exist_ok=True)
 
 print(f"🎯 Cache configurado em: {cache_dir}")
 
-from kerykeion import Report
+from kerykeion import report
 
 app = Flask(__name__)
 
@@ -30,7 +30,7 @@ def gerar_mapa_alma():
         pais = data['pais']
 
         # Forçar o uso do cache directory explicitamente
-        report = Report(
+        report = report(
             nome, ano, mes, dia, hora, minuto, cidade, pais,
             db_path='/tmp/kerykeion_cache'  # SOLUÇÃO EXPLÍCITA
         )
