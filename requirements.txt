@@ -1,6 +1,2 @@
-fastapi
-uvicorn
-supabase
-python-dotenv
-python-multipart
+flask
 kerykeion
