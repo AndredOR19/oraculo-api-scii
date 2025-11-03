@@ -30,8 +30,7 @@ def gerar_mapa_alma():
             hour=int(data['hora']),
             minute=int(data['minuto']),
             city=data['cidade'],
-            nation=data['pais'],
-            db_path=KERYKEION_CACHE_PATH
+            nation=data['pais']
         )
 
         # 2. Obtém os dados principais (Sol, Lua, Ascendente)
