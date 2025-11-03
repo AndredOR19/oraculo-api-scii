@@ -1,2 +1,6 @@
-flask
+fastapi
+uvicorn
+supabase
+python-dotenv
 kerykeion
+pydantic

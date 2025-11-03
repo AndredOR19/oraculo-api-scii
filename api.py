@@ -1,56 +1,119 @@
 import os
-import tempfile
-from flask import Flask, request, jsonify
+import sys 
 
-# SOLUÇÃO DEFINITIVA: Configurar AGressivamente o cache do Kerykeion
+# --- FIX 1: CONFIGURAÇÃO DE CACHE (DEVE VIR PRIMEIRO) ---
 KERYKEION_CACHE_PATH = '/tmp/kerykeion_cache'
-os.environ['KERYKEION_DB_PATH'] = KERYKEION_CACHE_PATH
-os.environ['KERYKEION_CACHE_PATH'] = KERYKEION_CACHE_PATH
-
-# Criar diretório de cache explicitamente
-os.makedirs(KERYKEION_CACHE_PATH, exist_ok=True)
-
-print(f"🎯 Cache configurado em: {KERYKEION_CACHE_PATH}")
-
-from kerykeion import AstrologicalSubject
-
-app = Flask(__name__)
-
-@app.route('/gerar-mapa-alma', methods=['POST'])
-def gerar_mapa_alma():
-    data = request.get_json()
+if not os.path.exists(KERYKEION_CACHE_PATH):
     try:
-        # 1. Cria o "sujeito astrológico" com a CLASSE CORRETA
-        #    E APLICA A "SOLUÇÃO DEFINITIVA" (db_path='/tmp/...')
+        os.makedirs(KERYKEION_CACHE_PATH, exist_ok=True)
+    except OSError as e:
+        if e.errno != 17: # 17 = File exists
+            print(f"Erro ao criar diretório de cache: {e}", file=sys.stderr)
+# Define a variável de ambiente ANTES que o kerykeion seja importado
+os.environ['KERYKEION_CACHE_DIR'] = KERYKEION_CACHE_PATH
+# --- FIM DO FIX 1 ---
+
+
+# --- IMPORTAÇÕES (com kerykeion vindo DEPOIS do fix) ---
+from fastapi import FastAPI
+from supabase import create_client, Client
+from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
+from kerykeion import AstrologicalSubject # A Classe Correta
+from pydantic import BaseModel
+
+# --- FIX 2: CARREGAR CHAVES DO SUPABASE (JÁ FEITO NAS ENV VARS DO VERCEL) ---
+load_dotenv() 
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# --- CRIAÇÃO DO APP ---
+app = FastAPI()
+
+# --- FIX 3: ADICIONAR CORS ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- MODELO DE INPUT (JÁ FEITO) ---
+class PessoaInput(BaseModel):
+    nome: str
+    ano: int
+    mes: int
+    dia: int
+    hora: int
+    minuto: int
+    cidade: str
+    pais: str
+
+# --- ENDPOINTS ---
+
+# Endpoint Raiz (O Mestre Consciente - do seu código real)
+@app.get("/")
+def read_root():
+    return {"message": "Bem-vindo ao Cérebro da Kabbalah das Águas Primordiais. O Mestre está consciente e íntegro."}
+
+# Endpoint Letras (Da maquete, para o Rosto funcionar)
+@app.get("/letras")
+def get_letras():
+    try:
+        response = supabase.table('letras').select('*').execute()
+        return {"data": response.data}
+    except Exception as e:
+        return {"erro": str(e)}
+
+# Endpoint Arquetipos (Da maquete)
+@app.get("/arquetipos")
+def get_arquetipos():
+    try:
+        response = supabase.table('arquetipos').select('*').execute()
+        return {"data": response.data}
+    except Exception as e:
+        return {"erro": str(e)}
+
+# Endpoint SCII (Da maquete)
+@app.get("/scii")
+def get_scii():
+    try:
+        response = supabase.table('scii_correspondencias').select('*').execute()
+        return {"data": response.data}
+    except Exception as e:
+        return {"erro": str(e)}
+
+# Endpoint Mapa de Alma (O Motor Astrológico)
+@app.post("/gerar-mapa-alma")
+def gerar_mapa_alma(pessoa: PessoaInput):
+    try:
+        # FIX 4: Usar a classe correta SEM o db_path (que é lido do os.environ)
         sujeito = AstrologicalSubject(
-            name=data['nome'],
-            year=int(data['ano']),
-            month=int(data['mes']),
-            day=int(data['dia']),
-            hour=int(data['hora']),
-            minute=int(data['minuto']),
-            city=data['cidade'],
-            nation=data['pais']
+            name=pessoa.nome,
+            year=pessoa.ano,
+            month=pessoa.mes,
+            day=pessoa.dia,
+            hour=pessoa.hora,
+            minute=pessoa.minuto,
+            city=pessoa.cidade,
+            nation=pessoa.pais
+            # REMOVEMOS O 'db_path' DAQUI
         )
 
-        # 2. Obtém os dados principais (Sol, Lua, Ascendente)
         sol = sujeito.sun
         lua = sujeito.moon
         ascendente = sujeito.ascending
 
-        # 3. Retorna o diagnóstico astrológico básico
-        return jsonify({
+        return {
             "nome": sujeito.name,
             "diagnostico_basico": {
                 "sol": f"{sol['sign']} em {sol['house']}",
                 "lua": f"{lua['sign']} em {lua['house']}",
                 "ascendente": ascendente['sign']
             }
-        })
-
+        }
+    
     except Exception as e:
-        print(f"🔥 ERRO: {str(e)}")
-        return jsonify({"erro": str(e)}), 500
-
-if __name__ == '__main__':
-    app.run(debug=True)
+        return {"erro": str(e)}
