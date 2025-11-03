@@ -12,7 +12,7 @@ os.makedirs(KERYKEION_CACHE_PATH, exist_ok=True)
 
 print(f"🎯 Cache configurado em: {KERYKEION_CACHE_PATH}")
 
-from kerykeion import report
+from kerykeion import AstrologicalSubject
 
 app = Flask(__name__)
 
@@ -21,8 +21,8 @@ def gerar_mapa_alma():
     data = request.get_json()
     try:
         # 1. Cria o "sujeito astrológico" com a CLASSE CORRETA
-        #    (report.Report) e o "fix" do cache.
-        sujeito = report.Report(
+        #    E APLICA A "SOLUÇÃO DEFINITIVA" (db_path='/tmp/...')
+        sujeito = AstrologicalSubject(
             name=data['nome'],
             year=int(data['ano']),
             month=int(data['mes']),
