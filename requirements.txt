@@ -3,4 +3,4 @@ uvicorn
 supabase
 python-dotenv
 python-multipart
-flatlib
+kerykeion
