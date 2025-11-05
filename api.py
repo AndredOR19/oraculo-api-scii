@@ -12,9 +12,8 @@ if not os.path.exists(KERYKEION_CACHE_PATH):
         if e.errno != 17: # 17 = File exists
             print(f"Erro ao criar diretório de cache: {e}", file=sys.stderr)
 
-# Define a variável de ambiente ANTES que o kerykeion seja importado
-# Esta é a linha que REALMENTE faz o "fix"
-os.environ['KERYKEION_CACHE_DIR'] = KERYKEION_CACHE_PATH
+# Define a variável de ambiente CORRETA (DB_PATH)
+os.environ['KERYKEION_DB_PATH'] = KERYKEION_CACHE_PATH
 # --- FIM DO BLOCO DE CONFIGURAÇÃO DE CACHE ---
 
 
