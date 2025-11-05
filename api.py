@@ -1,28 +1,21 @@
 import os
 import sys 
 
-# --- FIX 1: CONFIGURAÇÃO DE CACHE (DEVE VIR PRIMEIRO) ---
-# (Importa *apenas* 'settings' primeiro)
-try:
-    from kerykeion import settings
-except ImportError as e:
-    print(f"Erro ao importar 'settings' do kerykeion: {e}", file=sys.stderr)
-    sys.exit(1) # Falha o deploy se não puder importar
-
+# --- CONFIGURAÇÃO DE CACHE PARA O VERCEL (DEVE VIR PRIMEIRO) ---
 KERYKEION_CACHE_PATH = '/tmp/kerykeion_cache'
 
-# Cria o diretório (se não existir)
+# Verifica se o diretório existe, se não, cria
 if not os.path.exists(KERYKEION_CACHE_PATH):
     try:
         os.makedirs(KERYKEION_CACHE_PATH, exist_ok=True)
     except OSError as e:
         if e.errno != 17: # 17 = File exists
             print(f"Erro ao criar diretório de cache: {e}", file=sys.stderr)
-            
-# --- O COMANDO EXPLÍCITO (A Solução Definitiva 3.0) ---
-# Nós comandamos a biblioteca DIRETAMENTE.
-settings.set_cache_dir(KERYKEION_CACHE_PATH)
-# --- FIM DO FIX 1 ---
+
+# Define a variável de ambiente ANTES que o kerykeion seja importado
+# Esta é a linha que REALMENTE faz o "fix"
+os.environ['KERYKEION_CACHE_DIR'] = KERYKEION_CACHE_PATH
+# --- FIM DO BLOCO DE CONFIGURAÇÃO DE CACHE ---
 
 
 # --- AGORA O RESTO DAS IMPORTAÇÕES (são seguras) ---
