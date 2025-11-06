@@ -4,29 +4,23 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from kerykeion import KrInstance, MakeSvg
+import swisseph as swe
+from datetime import datetime
 
-# --- FIX DE CACHE PARA KERYKEION ---
-# Tentativa de forçar o cache para /tmp, um diretório gravável no Vercel
-CACHE_DIR = "/tmp/kerykeion_cache"
-if not os.path.exists(CACHE_DIR):
-    os.makedirs(CACHE_DIR, exist_ok=True)
+# --- CONFIGURAR CACHE DO SWISSEPH ---
+EPHE_PATH = '/tmp/ephe'
+os.makedirs(EPHE_PATH, exist_ok=True)
+swe.set_ephe_path(EPHE_PATH)
 
-os.environ['KERYKEION_CACHE_DIR'] = CACHE_DIR
-os.environ['KERYKEION_DB_PATH'] = os.path.join(CACHE_DIR, 'kerykeion.db')
-
-# Carrega as variáveis de ambiente
+# --- CARREGAR CHAVES ---
 load_dotenv()
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-
-# Inicializa o Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Inicializa o FastAPI
+# --- APP ---
 app = FastAPI()
 
-# Adiciona o middleware CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -35,7 +29,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Modelo de entrada
 class PessoaInput(BaseModel):
     nome: str
     ano: int
@@ -46,64 +39,42 @@ class PessoaInput(BaseModel):
     cidade: str
     pais: str
 
-# Endpoints
+# --- ENDPOINTS ---
 @app.get("/")
 def read_root():
     return {"message": "Bem-vindo ao Cérebro da Kabbalah das Águas Primordiais. O Mestre está consciente e íntegro."}
 
-@app.get("/letras")
-def get_letras():
-    try:
-        response = supabase.table('letras').select('*').execute()
-        return {"data": response.data}
-    except Exception as e:
-        return {"erro": str(e)}
-
-@app.get("/arquetipos")
-def get_arquetipos():
-    try:
-        response = supabase.table('arquetipos').select('*').execute()
-        return {"data": response.data}
-    except Exception as e:
-        return {"erro": str(e)}
-
-@app.get("/scii")
-def get_scii():
-    try:
-        response = supabase.table('scii_correspondencias').select('*').execute()
-        return {"data": response.data}
-    except Exception as e:
-        return {"erro": str(e)}
-
 @app.post("/gerar-mapa-alma")
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
-        # Instancia o KrInstance com os dados da pessoa
-        cliente = KrInstance(
-            pessoa.nome,
-            pessoa.ano,
-            pessoa.mes,
-            pessoa.dia,
-            pessoa.hora,
-            pessoa.minuto,
-            pessoa.cidade,
-            pessoa.pais,
-            db_path=os.environ['KERYKEION_DB_PATH'] # Força o uso do db_path
-        )
+        # Calcular Julian Day
+        dt = datetime(pessoa.ano, pessoa.mes, pessoa.dia, pessoa.hora, pessoa.minuto)
+        jd = swe.julday(pessoa.ano, pessoa.mes, pessoa.dia, 
+                        pessoa.hora + pessoa.minuto/60.0)
         
-        # Gera o mapa (exemplo, você pode querer outros dados)
-        sol = cliente.sun
-        lua = cliente.moon
-        asc = cliente.ascendant
-
+        # Calcular posições (Sol=0, Lua=1)
+        sol_pos = swe.calc_ut(jd, 0)[0]  # 0 = Sol
+        lua_pos = swe.calc_ut(jd, 1)[0]  # 1 = Lua
+        
+        # Calcular Ascendente (precisa lat/lon - usando Vacaria)
+        lat, lon = -28.51, -50.93
+        asc_pos = swe.houses(jd, lat, lon)[0][0]
+        
+        # Converter graus em signos
+        signos = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem",
+                  "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"]
+        
+        sol_signo = signos[int(sol_pos[0] / 30)]
+        lua_signo = signos[int(lua_pos[0] / 30)]
+        asc_signo = signos[int(asc_pos / 30)]
+        
         return {
-            "nome": cliente.name,
+            "nome": pessoa.nome,
             "diagnostico_basico": {
-                "sol": f"{sol['sign']} em {sol['house_name']}",
-                "lua": f"{lua['sign']} em {lua['house_name']}",
-                "ascendente": asc['sign']
+                "sol": f"{sol_signo}",
+                "lua": f"{lua_signo}",
+                "ascendente": f"{asc_signo}"
             }
         }
     except Exception as e:
-        # Retorna o erro específico para depuração
         return {"erro": str(e)}
