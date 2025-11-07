@@ -1,8 +1,8 @@
 import os
 from google import genai
 
-AIzaSyDc07nAn0ajBRc0IgZyj3TzRZkpiwQDvCw
-client = genai.Client(AIzaSyDc07nAn0ajBRc0IgZyj3TzRZkpiwQDvCw)
+
+client = genai.Client()
 
 def consultar_oraculo(pergunta_do_usuario):
     # 1. Definição do Cérebro (Instrução do Sistema)
