@@ -84,7 +84,7 @@ def gerar_mapa_alma(pessoa: PessoaInput):
         data = Datetime(data_str, hora_str, fuso)
         pos = GeoPos(lat, lon)
         chart = Chart(data, pos)
-
+        
         sol_obj = chart.get(Sun)
         lua_obj = chart.get(Moon)
         asc_obj = chart.get(Ascendant)
@@ -95,7 +95,7 @@ def gerar_mapa_alma(pessoa: PessoaInput):
         signo_asc = asc_obj.sign
 
         # === PASSO 2: A TRADUÇÃO SCII (A Nova Magia) ===
-
+        
         # Função auxiliar para "traduzir" um arquétipo (ex: "Capricórnio") na Gnose (Letra)
         def traduzir_arquetipo(nome_arquetipo):
             try:
@@ -103,23 +103,23 @@ def gerar_mapa_alma(pessoa: PessoaInput):
                 arquetipo_resp = supabase.table('arquetipos').select('id').eq('nome_arquetipo', nome_arquetipo).execute()
                 if not arquetipo_resp.data:
                     return {"erro": f"Arquétipo '{nome_arquetipo}' não encontrado no SCII."}
-
+                
                 arquetipo_id = arquetipo_resp.data[0]['id']
 
                 # 2. Encontra a correspondência na malha SCII
                 correspondencia_resp = supabase.table('scii_correspondencias').select('letra_id').eq('arquetipo_id', arquetipo_id).execute()
                 if not correspondencia_resp.data:
                     return {"erro": f"Correspondência SCII para '{nome_arquetipo}' não encontrada."}
-
+                
                 letra_id = correspondencia_resp.data[0]['letra_id']
 
                 # 3. Busca a Gnose da Letra
                 letra_resp = supabase.table('letras').select('nome_letra, pictografia, acao_espiritual').eq('id', letra_id).execute()
                 if not letra_resp.data:
                     return {"erro": f"Letra ID '{letra_id}' não encontrada."}
-
+                    
                 return letra_resp.data[0] # Retorna a Gnose (ex: {"nome_letra": "Ayin", ...})
-
+            
             except Exception as e:
                 return {"erro": f"Erro na tradução SCII: {str(e)}"}
 
@@ -137,6 +137,6 @@ def gerar_mapa_alma(pessoa: PessoaInput):
                 "ascendente_letra": traduzir_arquetipo(signo_asc)
             }
         }
-
+    
     except Exception as e:
         return {"erro": str(e)}
