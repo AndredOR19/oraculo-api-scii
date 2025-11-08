@@ -4,13 +4,10 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import swisseph as swe
-from datetime import datetime
-
-# --- CONFIGURAR CACHE DO SWISSEPH ---
-EPHE_PATH = '/tmp/ephe'
-os.makedirs(EPHE_PATH, exist_ok=True)
-swe.set_ephe_path(EPHE_PATH)
+from flatlib.chart import Chart
+from flatlib.datetime import Datetime
+from flatlib.geopos import GeoPos
+from flatlib.const import Sun, Moon, Ascendant
 
 # --- CARREGAR CHAVES ---
 load_dotenv()
@@ -44,50 +41,73 @@ class PessoaInput(BaseModel):
 def read_root():
     return {"message": "Bem-vindo ao Cérebro da Kabbalah das Águas Primordiais. O Mestre está consciente e íntegro."}
 
+# Endpoint Mapa de Alma (O Motor Astrológico + A Fusão SCII)
 @app.post("/gerar-mapa-alma")
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
-        # --- FIX DO FUSO HORÁRIO ---
-        # Fuso horário de Vacaria (Brazil) = -3.0
-        # (Precisamos converter a hora local para a hora UTC)
+        # === PASSO 1: CÁLCULO ASTROLÓGICO (Como antes) ===
+        data_str = f"{pessoa.ano}/{pessoa.mes}/{pessoa.dia}"
+        hora_str = f"{pessoa.hora}:{pessoa.minuto}"
+        lat = '-28.51' # Vacaria Lat
+        lon = '-50.93' # Vacaria Lon
         fuso = -3.0
-        hora_local_decimal = pessoa.hora + pessoa.minuto/60.0
-        
-        # Converter a hora local para UTC
-        # (ex: 5.5h local - (-3.0h fuso) = 8.5h UTC)
-        hora_utc_decimal = hora_local_decimal - fuso
-        # --- FIM DO FIX ---
 
-        # Calcular Julian Day (agora com a hora UTC correta)
-        jd = swe.julday(pessoa.ano, pessoa.mes, pessoa.dia, 
-                        hora_utc_decimal)
-        
-        # Calcular posições (Sol=0, Lua=1)
-        # Usamos swe.calc_ut (que espera um Julian Day UTC)
-        sol_pos = swe.calc_ut(jd, 0)[0]  # 0 = Sol
-        lua_pos = swe.calc_ut(jd, 1)[0]  # 1 = Lua
-        
-        # Calcular Ascendente (usando Vacaria)
-        lat, lon = -28.51, -50.93
-        # Usamos swe.houses (que também espera o JD em UTC)
-        casas_info = swe.houses(jd, lat, lon)
-        asc_pos = casas_info[0][0] # Posição do Ascendente (Casa 1)
-        
-        # Converter graus em signos
-        signos = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem",
-                  "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"]
-        
-        sol_signo = signos[int(sol_pos[0] / 30)]
-        lua_signo = signos[int(lua_pos[0] / 30)]
-        asc_signo = signos[int(asc_pos / 30)]
-        
+        data = Datetime(data_str, hora_str, fuso)
+        pos = GeoPos(lat, lon)
+        chart = Chart(data, pos)
+
+        sol_obj = chart.get(Sun)
+        lua_obj = chart.get(Moon)
+        asc_obj = chart.get(Ascendant)
+
+        # Nomes dos arquétipos que vamos procurar no Supabase
+        signo_sol = sol_obj.sign
+        signo_lua = lua_obj.sign
+        signo_asc = asc_obj.sign
+
+        # === PASSO 2: A TRADUÇÃO SCII (A Nova Magia) ===
+
+        # Função auxiliar para "traduzir" um arquétipo (ex: "Capricórnio") na Gnose (Letra)
+        def traduzir_arquetipo(nome_arquetipo):
+            try:
+                # 1. Encontra o arquétipo no Supabase
+                arquetipo_resp = supabase.table('arquetipos').select('id').eq('nome_arquetipo', nome_arquetipo).execute()
+                if not arquetipo_resp.data:
+                    return {"erro": f"Arquétipo '{nome_arquetipo}' não encontrado no SCII."}
+
+                arquetipo_id = arquetipo_resp.data[0]['id']
+
+                # 2. Encontra a correspondência na malha SCII
+                correspondencia_resp = supabase.table('scii_correspondencias').select('letra_id').eq('arquetipo_id', arquetipo_id).execute()
+                if not correspondencia_resp.data:
+                    return {"erro": f"Correspondência SCII para '{nome_arquetipo}' não encontrada."}
+
+                letra_id = correspondencia_resp.data[0]['letra_id']
+
+                # 3. Busca a Gnose da Letra
+                letra_resp = supabase.table('letras').select('nome_letra, pictografia, acao_espiritual').eq('id', letra_id).execute()
+                if not letra_resp.data:
+                    return {"erro": f"Letra ID '{letra_id}' não encontrada."}
+
+                return letra_resp.data[0] # Retorna a Gnose (ex: {"nome_letra": "Ayin", ...})
+
+            except Exception as e:
+                return {"erro": f"Erro na tradução SCII: {str(e)}"}
+
+        # === PASSO 3: RETORNAR O MAPA DE ALMA COMPLETO ===
         return {
             "nome": pessoa.nome,
-            "diagnostico_basico": {
-                "sol": f"{sol_signo}",
-                "lua": f"{lua_signo}",
-                "ascendente": f"{asc_signo}" # Agora corrigido
+            "diagnostico_astrologico": {
+                "sol": f"{signo_sol} em Casa {sol_obj.house}",
+                "lua": f"{signo_lua} em Casa {lua_obj.house}",
+                "ascendente": signo_asc
+            },
+            "diagnostico_scii_gnose": {
+                "sol_letra": traduzir_arquetipo(signo_sol),
+                "lua_letra": traduzir_arquetipo(signo_lua),
+                "ascendente_letra": traduzir_arquetipo(signo_asc)
             }
         }
+
     except Exception as e:
         return {"erro": str(e)}
