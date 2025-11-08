@@ -1,52 +1,39 @@
 import os
 import sys 
 
-# --- FIX 1: CONFIGURAÇÃO DE CACHE (Para flatlib - O Comando Explícito) ---
-try:
-    # Importa o 'swe' (o motor suíço) diretamente
-    from flatlib.ephem import swe 
-except ImportError as e:
-    print(f"Erro ao importar 'swe' do flatlib: {e}", file=sys.stderr)
-    sys.exit(1)
-
-FLATLIB_CACHE_PATH = '/tmp/flatlib_cache'
-
-# Cria o diretório (se não existir)
-if not os.path.exists(FLATLIB_CACHE_PATH):
+# --- FIX 1: CONFIGURAÇÃO DE CACHE (DEVE VIR PRIMEIRO) ---
+from flatlib.ephem import swe 
+KERYKEION_CACHE_PATH = '/tmp/flatlib_cache'
+if not os.path.exists(KERYKEION_CACHE_PATH):
     try:
-        os.makedirs(FLATLIB_CACHE_PATH, exist_ok=True)
+        os.makedirs(KERYKEION_CACHE_PATH, exist_ok=True)
     except OSError as e:
-        if e.errno != 17: # 17 = File exists
+        if e.errno != 17:
             print(f"Erro ao criar diretório de cache: {e}", file=sys.stderr)
-            
-# --- O COMANDO EXPLÍCITO (A Solução Definitiva 4.0) ---
-# Nós comandamos a biblioteca DIRETAMENTE, usando o comando do log de erro.
-# O 'os.environ' falhou; isto não vai falhar.
-swe.swe_set_ephe_path(FLATLIB_CACHE_PATH)
+swe.swe_set_ephe_path(KERYKEION_CACHE_PATH)
 # --- FIM DO FIX 1 ---
-
 
 # --- AGORA O RESTO DAS IMPORTAÇÕES (são seguras) ---
 from fastapi import FastAPI
-from supabase import create_client, Client
+from supabase import create_client, Client # Importamos a Classe, mas não a usamos ainda
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
 from flatlib.datetime import Datetime
 from flatlib.geopos import GeoPos
 from flatlib.chart import Chart
 from flatlib.objects import Sun, Moon, Ascendant
 
-# --- CARREGAR CHAVES ---
-load_dotenv()
+# --- FIX 2: CARREGAR CHAVES DO SUPABASE ---
+load_dotenv() 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# --- REMOVEMOS A CRIAÇÃO DO CLIENTE GLOBAL DAQUI ---
 
-# --- APP ---
+# --- CRIAÇÃO DO APP ---
 app = FastAPI()
 
+# --- FIX 3: ADICIONAR CORS ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -55,6 +42,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- MODELO DE INPUT ---
 class PessoaInput(BaseModel):
     nome: str
     ano: int
@@ -68,12 +56,50 @@ class PessoaInput(BaseModel):
 # --- ENDPOINTS ---
 @app.get("/")
 def read_root():
+    # Este endpoint não precisa de conexão, então não a criamos.
     return {"message": "Bem-vindo ao Cérebro da Kabbalah das Águas Primordiais. O Mestre está consciente e íntegro."}
 
-# Endpoint Mapa de Alma (O Motor Astrológico + A Fusão SCII)
+# Endpoint Letras (Cria sua própria conexão)
+@app.get("/letras")
+def get_letras():
+    try:
+        # --- FIX 4 (SERVERLESS): Cria a conexão DENTRO da função ---
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        response = supabase.from_('letras').select('*').execute()
+        return {"data": response.data}
+    except Exception as e:
+        return {"erro": str(e)}
+
+# Endpoint Arquetipos (Cria sua própria conexão)
+@app.get("/arquetipos")
+def get_arquetipos():
+    try:
+        # --- FIX 4 (SERVERLESS): Cria a conexão DENTRO da função ---
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        response = supabase.from_('arquetipos').select('*').execute()
+        return {"data": response.data}
+    except Exception as e:
+        return {"erro": str(e)}
+
+# Endpoint SCII (Cria sua própria conexão)
+@app.get("/scii")
+def get_scii():
+    try:
+        # --- FIX 4 (SERVERLESS): Cria a conexão DENTRO da função ---
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        response = supabase.from_('scii_correspondencias').select('*').execute()
+        return {"data": response.data}
+    except Exception as e:
+        return {"erro": str(e)}
+
+
+# Endpoint Mapa de Alma (Cria sua própria conexão)
 @app.post("/gerar-mapa-alma")
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
+        # --- FIX 4 (SERVERLESS): Cria a conexão DENTRO da função ---
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
         # === PASSO 1: CÁLCULO ASTROLÓGICO (Como antes) ===
         data_str = f"{pessoa.ano}/{pessoa.mes}/{pessoa.dia}"
         hora_str = f"{pessoa.hora}:{pessoa.minuto}"
@@ -89,36 +115,32 @@ def gerar_mapa_alma(pessoa: PessoaInput):
         lua_obj = chart.get(Moon)
         asc_obj = chart.get(Ascendant)
 
-        # Nomes dos arquétipos que vamos procurar no Supabase
         signo_sol = sol_obj.sign
         signo_lua = lua_obj.sign
         signo_asc = asc_obj.sign
 
         # === PASSO 2: A TRADUÇÃO SCII (A Nova Magia) ===
         
-        # Função auxiliar para "traduzir" um arquétipo (ex: "Capricórnio") na Gnose (Letra)
+        # Função auxiliar (ela usará o 'supabase' que acabamos de criar)
         def traduzir_arquetipo(nome_arquetipo):
             try:
-                # 1. Encontra o arquétipo no Supabase
                 arquetipo_resp = supabase.from_('arquetipos').select('id').eq('nome_arquetipo', nome_arquetipo).execute()
                 if not arquetipo_resp.data:
                     return {"erro": f"Arquétipo '{nome_arquetipo}' não encontrado no SCII."}
                 
                 arquetipo_id = arquetipo_resp.data[0]['id']
 
-                # 2. Encontra a correspondência na malha SCII
                 correspondencia_resp = supabase.from_('scii_correspondencias').select('letra_id').eq('arquetipo_id', arquetipo_id).execute()
                 if not correspondencia_resp.data:
                     return {"erro": f"Correspondência SCII para '{nome_arquetipo}' não encontrada."}
                 
                 letra_id = correspondencia_resp.data[0]['letra_id']
 
-                # 3. Busca a Gnose da Letra
                 letra_resp = supabase.from_('letras').select('nome_letra, pictografia, acao_espiritual').eq('id', letra_id).execute()
                 if not letra_resp.data:
                     return {"erro": f"Letra ID '{letra_id}' não encontrada."}
                     
-                return letra_resp.data[0] # Retorna a Gnose (ex: {"nome_letra": "Ayin", ...})
+                return letra_resp.data[0] 
             
             except Exception as e:
                 return {"erro": f"Erro na tradução SCII: {str(e)}"}
