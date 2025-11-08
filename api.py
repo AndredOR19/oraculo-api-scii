@@ -1,21 +1,22 @@
 import os
 import sys 
+import requests # O NOVO CLIENTE DE API
 
-# --- FIX 1: CONFIGURAÇÃO DE CACHE (DEVE VIR PRIMEIRO) ---
+# --- FIX 1: CONFIGURAÇÃO DE CACHE (flatlib) ---
 from flatlib.ephem import swe 
-KERYKEION_CACHE_PATH = '/tmp/flatlib_cache'
-if not os.path.exists(KERYKEION_CACHE_PATH):
+FLATLIB_CACHE_PATH = '/tmp/flatlib_cache'
+if not os.path.exists(FLATLIB_CACHE_PATH):
     try:
-        os.makedirs(KERYKEION_CACHE_PATH, exist_ok=True)
+        os.makedirs(FLATLIB_CACHE_PATH, exist_ok=True)
     except OSError as e:
         if e.errno != 17:
             print(f"Erro ao criar diretório de cache: {e}", file=sys.stderr)
-swe.swe_set_ephe_path(KERYKEION_CACHE_PATH)
+swe.swe_set_ephe_path(FLATLIB_CACHE_PATH)
 # --- FIM DO FIX 1 ---
 
-# --- AGORA O RESTO DAS IMPORTAÇÕES (são seguras) ---
+# --- IMPORTAÇÕES (são seguras) ---
 from fastapi import FastAPI
-from supabase import create_client, Client # Importamos a Classe, mas não a usamos ainda
+# REMOVEMOS 'from supabase...'
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -28,7 +29,7 @@ from flatlib.objects import Sun, Moon, Ascendant
 load_dotenv() 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-# --- REMOVEMOS A CRIAÇÃO DO CLIENTE GLOBAL DAQUI ---
+# --- FIM DO FIX 2 ---
 
 # --- CRIAÇÃO DO APP ---
 app = FastAPI()
@@ -54,53 +55,90 @@ class PessoaInput(BaseModel):
     pais: str
 
 # --- ENDPOINTS ---
+
+# Função auxiliar (O NOVO TRADUTOR SCII com 'requests')
+def traduzir_arquetipo_requests(nome_arquetipo):
+    try:
+        headers = {
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}"
+        }
+        
+        # 1. Encontra o arquétipo no Supabase
+        url_arq = f"{SUPABASE_URL}/rest/v1/arquetipos?nome_arquetipo=eq.{nome_arquetipo}&select=id"
+        resp_arq = requests.get(url_arq, headers=headers)
+        resp_arq.raise_for_status() # Lança erro se a chamada falhar
+        data_arq = resp_arq.json()
+        if not data_arq:
+            return {"erro": f"Arquétipo '{nome_arquetipo}' não encontrado no SCII."}
+        arquetipo_id = data_arq[0]['id']
+
+        # 2. Encontra a correspondência na malha SCII
+        url_corr = f"{SUPABASE_URL}/rest/v1/scii_correspondencias?arquetipo_id=eq.{arquetipo_id}&select=letra_id"
+        resp_corr = requests.get(url_corr, headers=headers)
+        resp_corr.raise_for_status()
+        data_corr = resp_corr.json()
+        if not data_corr:
+            return {"erro": f"Correspondência SCII para '{nome_arquetipo}' não encontrada."}
+        letra_id = data_corr[0]['letra_id']
+
+        # 3. Busca a Gnose da Letra
+        url_letra = f"{SUPABASE_URL}/rest/v1/letras?id=eq.{letra_id}&select=nome_letra,pictografia,acao_espiritual"
+        resp_letra = requests.get(url_letra, headers=headers)
+        resp_letra.raise_for_status()
+        data_letra = resp_letra.json()
+        if not data_letra:
+            return {"erro": f"Letra ID '{letra_id}' não encontrada."}
+            
+        return data_letra[0] 
+    
+    except Exception as e:
+        return {"erro": f"Erro na tradução SCII (requests): {str(e)}"}
+
+
 @app.get("/")
 def read_root():
-    # Este endpoint não precisa de conexão, então não a criamos.
     return {"message": "Bem-vindo ao Cérebro da Kabbalah das Águas Primordiais. O Mestre está consciente e íntegro."}
 
-# Endpoint Letras (Cria sua própria conexão)
+# Endpoint Letras (com 'requests')
 @app.get("/letras")
 def get_letras():
     try:
-        # --- FIX 4 (SERVERLESS): Cria a conexão DENTRO da função ---
-        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        response = supabase.from_('letras').select('*').execute()
-        return {"data": response.data}
+        headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+        response = requests.get(f"{SUPABASE_URL}/rest/v1/letras?select=*", headers=headers)
+        response.raise_for_status()
+        return {"data": response.json()}
     except Exception as e:
         return {"erro": str(e)}
 
-# Endpoint Arquetipos (Cria sua própria conexão)
+# Endpoint Arquetipos (com 'requests')
 @app.get("/arquetipos")
 def get_arquetipos():
     try:
-        # --- FIX 4 (SERVERLESS): Cria a conexão DENTRO da função ---
-        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        response = supabase.from_('arquetipos').select('*').execute()
-        return {"data": response.data}
+        headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+        response = requests.get(f"{SUPABASE_URL}/rest/v1/arquetipos?select=*", headers=headers)
+        response.raise_for_status()
+        return {"data": response.json()}
     except Exception as e:
         return {"erro": str(e)}
 
-# Endpoint SCII (Cria sua própria conexão)
+# Endpoint SCII (com 'requests')
 @app.get("/scii")
 def get_scii():
     try:
-        # --- FIX 4 (SERVERLESS): Cria a conexão DENTRO da função ---
-        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        response = supabase.from_('scii_correspondencias').select('*').execute()
-        return {"data": response.data}
+        headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+        response = requests.get(f"{SUPABASE_URL}/rest/v1/scii_correspondencias?select=*", headers=headers)
+        response.raise_for_status()
+        return {"data": response.json()}
     except Exception as e:
         return {"erro": str(e)}
 
 
-# Endpoint Mapa de Alma (Cria sua própria conexão)
+# Endpoint Mapa de Alma (com 'flatlib' e 'requests')
 @app.post("/gerar-mapa-alma")
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
-        # --- FIX 4 (SERVERLESS): Cria a conexão DENTRO da função ---
-        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-        # === PASSO 1: CÁLCULO ASTROLÓGICO (Como antes) ===
+        # === PASSO 1: CÁLCULO ASTROLÓGICO (flatlib) ===
         data_str = f"{pessoa.ano}/{pessoa.mes}/{pessoa.dia}"
         hora_str = f"{pessoa.hora}:{pessoa.minuto}"
         lat = '-28.51' # Vacaria Lat
@@ -119,32 +157,8 @@ def gerar_mapa_alma(pessoa: PessoaInput):
         signo_lua = lua_obj.sign
         signo_asc = asc_obj.sign
 
-        # === PASSO 2: A TRADUÇÃO SCII (A Nova Magia) ===
+        # === PASSO 2: A TRADUÇÃO SCII (com 'requests') ===
         
-        # Função auxiliar (ela usará o 'supabase' que acabamos de criar)
-        def traduzir_arquetipo(nome_arquetipo):
-            try:
-                arquetipo_resp = supabase.from_('arquetipos').select('id').eq('nome_arquetipo', nome_arquetipo).execute()
-                if not arquetipo_resp.data:
-                    return {"erro": f"Arquétipo '{nome_arquetipo}' não encontrado no SCII."}
-                
-                arquetipo_id = arquetipo_resp.data[0]['id']
-
-                correspondencia_resp = supabase.from_('scii_correspondencias').select('letra_id').eq('arquetipo_id', arquetipo_id).execute()
-                if not correspondencia_resp.data:
-                    return {"erro": f"Correspondência SCII para '{nome_arquetipo}' não encontrada."}
-                
-                letra_id = correspondencia_resp.data[0]['letra_id']
-
-                letra_resp = supabase.from_('letras').select('nome_letra, pictografia, acao_espiritual').eq('id', letra_id).execute()
-                if not letra_resp.data:
-                    return {"erro": f"Letra ID '{letra_id}' não encontrada."}
-                    
-                return letra_resp.data[0] 
-            
-            except Exception as e:
-                return {"erro": f"Erro na tradução SCII: {str(e)}"}
-
         # === PASSO 3: RETORNAR O MAPA DE ALMA COMPLETO ===
         return {
             "nome": pessoa.nome,
@@ -154,9 +168,9 @@ def gerar_mapa_alma(pessoa: PessoaInput):
                 "ascendente": signo_asc
             },
             "diagnostico_scii_gnose": {
-                "sol_letra": traduzir_arquetipo(signo_sol),
-                "lua_letra": traduzir_arquetipo(signo_lua),
-                "ascendente_letra": traduzir_arquetipo(signo_asc)
+                "sol_letra": traduzir_arquetipo_requests(signo_sol),
+                "lua_letra": traduzir_arquetipo_requests(signo_lua),
+                "ascendente_letra": traduzir_arquetipo_requests(signo_asc)
             }
         }
     
