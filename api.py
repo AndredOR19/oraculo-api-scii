@@ -1,13 +1,42 @@
 import os
+import sys 
+
+# --- FIX 1: CONFIGURAÇÃO DE CACHE (Para flatlib - O Comando Explícito) ---
+try:
+    # Importa o 'swe' (o motor suíço) diretamente
+    from flatlib.ephem import swe 
+except ImportError as e:
+    print(f"Erro ao importar 'swe' do flatlib: {e}", file=sys.stderr)
+    sys.exit(1)
+
+FLATLIB_CACHE_PATH = '/tmp/flatlib_cache'
+
+# Cria o diretório (se não existir)
+if not os.path.exists(FLATLIB_CACHE_PATH):
+    try:
+        os.makedirs(FLATLIB_CACHE_PATH, exist_ok=True)
+    except OSError as e:
+        if e.errno != 17: # 17 = File exists
+            print(f"Erro ao criar diretório de cache: {e}", file=sys.stderr)
+            
+# --- O COMANDO EXPLÍCITO (A Solução Definitiva 4.0) ---
+# Nós comandamos a biblioteca DIRETAMENTE, usando o comando do log de erro.
+# O 'os.environ' falhou; isto não vai falhar.
+swe.swe_set_ephe_path(FLATLIB_CACHE_PATH)
+# --- FIM DO FIX 1 ---
+
+
+# --- AGORA O RESTO DAS IMPORTAÇÕES (são seguras) ---
 from fastapi import FastAPI
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from flatlib.chart import Chart
+
 from flatlib.datetime import Datetime
 from flatlib.geopos import GeoPos
-from flatlib.const import Sun, Moon, Ascendant
+from flatlib.chart import Chart
+from flatlib.objects import Sun, Moon, Ascendant
 
 # --- CARREGAR CHAVES ---
 load_dotenv()
