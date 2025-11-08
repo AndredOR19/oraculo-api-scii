@@ -100,21 +100,21 @@ def gerar_mapa_alma(pessoa: PessoaInput):
         def traduzir_arquetipo(nome_arquetipo):
             try:
                 # 1. Encontra o arquétipo no Supabase
-                arquetipo_resp = supabase.table('arquetipos').select('id').eq('nome_arquetipo', nome_arquetipo).execute()
+                arquetipo_resp = supabase.from_('arquetipos').select('id').eq('nome_arquetipo', nome_arquetipo).execute()
                 if not arquetipo_resp.data:
                     return {"erro": f"Arquétipo '{nome_arquetipo}' não encontrado no SCII."}
                 
                 arquetipo_id = arquetipo_resp.data[0]['id']
 
                 # 2. Encontra a correspondência na malha SCII
-                correspondencia_resp = supabase.table('scii_correspondencias').select('letra_id').eq('arquetipo_id', arquetipo_id).execute()
+                correspondencia_resp = supabase.from_('scii_correspondencias').select('letra_id').eq('arquetipo_id', arquetipo_id).execute()
                 if not correspondencia_resp.data:
                     return {"erro": f"Correspondência SCII para '{nome_arquetipo}' não encontrada."}
                 
                 letra_id = correspondencia_resp.data[0]['letra_id']
 
                 # 3. Busca a Gnose da Letra
-                letra_resp = supabase.table('letras').select('nome_letra, pictografia, acao_espiritual').eq('id', letra_id).execute()
+                letra_resp = supabase.from_('letras').select('nome_letra, pictografia, acao_espiritual').eq('id', letra_id).execute()
                 if not letra_resp.data:
                     return {"erro": f"Letra ID '{letra_id}' não encontrada."}
                     
