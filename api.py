@@ -65,8 +65,9 @@ def traduzir_arquetipo_requests(nome_arquetipo):
         }
         
         # 1. Encontra o arquétipo no Supabase
-        url_arq = f"{SUPABASE_URL}/rest/v1/arquetipos?nome_arquetipo=eq.{nome_arquetipo}&select=id"
-        resp_arq = requests.get(url_arq, headers=headers)
+        url_arq = f"{SUPABASE_URL}/rest/v1/arquetipos"
+        params_arq = {'nome_arquetipo': f'eq.{nome_arquetipo}', 'select': 'id'}
+        resp_arq = requests.get(url_arq, headers=headers, params=params_arq)
         resp_arq.raise_for_status() # Lança erro se a chamada falhar
         data_arq = resp_arq.json()
         if not data_arq:
@@ -74,8 +75,9 @@ def traduzir_arquetipo_requests(nome_arquetipo):
         arquetipo_id = data_arq[0]['id']
 
         # 2. Encontra a correspondência na malha SCII
-        url_corr = f"{SUPABASE_URL}/rest/v1/scii_correspondencias?arquetipo_id=eq.{arquetipo_id}&select=letra_id"
-        resp_corr = requests.get(url_corr, headers=headers)
+        url_corr = f"{SUPABASE_URL}/rest/v1/scii_correspondencias"
+        params_corr = {'arquetipo_id': f'eq.{arquetipo_id}', 'select': 'letra_id'}
+        resp_corr = requests.get(url_corr, headers=headers, params=params_corr)
         resp_corr.raise_for_status()
         data_corr = resp_corr.json()
         if not data_corr:
@@ -83,8 +85,9 @@ def traduzir_arquetipo_requests(nome_arquetipo):
         letra_id = data_corr[0]['letra_id']
 
         # 3. Busca a Gnose da Letra
-        url_letra = f"{SUPABASE_URL}/rest/v1/letras?id=eq.{letra_id}&select=nome_letra,pictografia,acao_espiritual"
-        resp_letra = requests.get(url_letra, headers=headers)
+        url_letra = f"{SUPABASE_URL}/rest/v1/letras"
+        params_letra = {'id': f'eq.{letra_id}', 'select': 'nome_letra,pictografia,acao_espiritual'}
+        resp_letra = requests.get(url_letra, headers=headers, params=params_letra)
         resp_letra.raise_for_status()
         data_letra = resp_letra.json()
         if not data_letra:
@@ -133,6 +136,10 @@ def get_scii():
     except Exception as e:
         return {"erro": str(e)}
 
+
+import traceback
+
+# ... (rest of the file)
 
 # Endpoint Mapa de Alma (com 'flatlib' e 'requests')
 @app.post("/gerar-mapa-alma")
