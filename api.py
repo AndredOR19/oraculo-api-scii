@@ -23,7 +23,7 @@ from pydantic import BaseModel
 from flatlib.datetime import Datetime
 from flatlib.geopos import GeoPos
 from flatlib.chart import Chart
-from flatlib.objects import Sun, Moon, Ascendant, Mercury, Mars
+from flatlib.objects import Sun, Moon, Ascendant, Mercury, Mars, Venus, Jupiter
 
 # --- FIX 2: CARREGAR CHAVES DO SUPABASE ---
 load_dotenv() 
@@ -141,7 +141,7 @@ import traceback
 
 # ... (rest of the file)
 
-# Endpoint Mapa de Alma (Motor Astrológico + Fusão SCII V2)
+# Endpoint Mapa de Alma (Motor Astrológico + Fusão SCII V4)
 @app.post("/gerar-mapa-alma")
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
@@ -159,15 +159,19 @@ def gerar_mapa_alma(pessoa: PessoaInput):
         sol_obj = chart.get(Sun)
         lua_obj = chart.get(Moon)
         asc_obj = chart.get(Ascendant)
-        mercurio_obj = chart.get(Mercury) # <-- NOVO
-        marte_obj = chart.get(Mars)       # <-- NOVO
+        mercurio_obj = chart.get(Mercury)
+        marte_obj = chart.get(Mars)
+        venus_obj = chart.get(Venus)     # <-- NOVO
+        jupiter_obj = chart.get(Jupiter) # <-- NOVO
 
         # Nomes dos arquétipos que vamos procurar no Supabase
         signo_sol = sol_obj.sign
         signo_lua = lua_obj.sign
         signo_asc = asc_obj.sign
-        signo_mercurio = mercurio_obj.sign # <-- NOVO
-        signo_marte = marte_obj.sign       # <-- NOVO
+        signo_mercurio = mercurio_obj.sign
+        signo_marte = marte_obj.sign
+        signo_venus = venus_obj.sign     # <-- NOVO
+        signo_jupiter = jupiter_obj.sign # <-- NOVO
 
         # === PASSO 2: A TRADUÇÃO SCII (A Função Auxiliar) ===
         
@@ -214,15 +218,19 @@ def gerar_mapa_alma(pessoa: PessoaInput):
                 "sol": f"{signo_sol} em Casa {sol_obj.house}",
                 "lua": f"{signo_lua} em Casa {lua_obj.house}",
                 "ascendente": signo_asc,
-                "mercurio": f"{signo_mercurio} em Casa {mercurio_obj.house}", # <-- NOVO
-                "marte": f"{signo_marte} em Casa {marte_obj.house}"        # <-- NOVO
+                "mercurio": f"{signo_mercurio} em Casa {mercurio_obj.house}",
+                "marte": f"{signo_marte} em Casa {marte_obj.house}",
+                "venus": f"{signo_venus} em Casa {venus_obj.house}",     # <-- NOVO
+                "jupiter": f"{signo_jupiter} em Casa {jupiter_obj.house}" # <-- NOVO
             },
             "diagnostico_scii_gnose": {
                 "sol_letra": traduzir_arquetipo_requests(signo_sol),
                 "lua_letra": traduzir_arquetipo_requests(signo_lua),
                 "ascendente_letra": traduzir_arquetipo_requests(signo_asc),
-                "mercurio_letra": traduzir_arquetipo_requests(signo_mercurio), # <-- NOVO
-                "marte_letra": traduzir_arquetipo_requests(signo_marte)        # <-- NOVO
+                "mercurio_letra": traduzir_arquetipo_requests(signo_mercurio),
+                "marte_letra": traduzir_arquetipo_requests(signo_marte),
+                "venus_letra": traduzir_arquetipo_requests(signo_venus),     # <-- NOVO
+                "jupiter_letra": traduzir_arquetipo_requests(signo_jupiter) # <-- NOVO
             }
         }
     
