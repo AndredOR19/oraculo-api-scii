@@ -23,7 +23,7 @@ from pydantic import BaseModel
 from flatlib.datetime import Datetime
 from flatlib.geopos import GeoPos
 from flatlib.chart import Chart
-from flatlib.objects import Sun, Moon, Ascendant
+from flatlib.objects import Sun, Moon, Ascendant, Mercury, Mars
 
 # --- FIX 2: CARREGAR CHAVES DO SUPABASE ---
 load_dotenv() 
@@ -141,11 +141,11 @@ import traceback
 
 # ... (rest of the file)
 
-# Endpoint Mapa de Alma (com 'flatlib' e 'requests')
+# Endpoint Mapa de Alma (Motor Astrológico + Fusão SCII V2)
 @app.post("/gerar-mapa-alma")
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
-        # === PASSO 1: CÁLCULO ASTROLÓGICO (flatlib) ===
+        # === PASSO 1: CÁLCULO ASTROLÓGICO (Expandido) ===
         data_str = f"{pessoa.ano}/{pessoa.mes}/{pessoa.dia}"
         hora_str = f"{pessoa.hora}:{pessoa.minuto}"
         lat = '-28.51' # Vacaria Lat
@@ -159,25 +159,70 @@ def gerar_mapa_alma(pessoa: PessoaInput):
         sol_obj = chart.get(Sun)
         lua_obj = chart.get(Moon)
         asc_obj = chart.get(Ascendant)
+        mercurio_obj = chart.get(Mercury) # <-- NOVO
+        marte_obj = chart.get(Mars)       # <-- NOVO
 
+        # Nomes dos arquétipos que vamos procurar no Supabase
         signo_sol = sol_obj.sign
         signo_lua = lua_obj.sign
         signo_asc = asc_obj.sign
+        signo_mercurio = mercurio_obj.sign # <-- NOVO
+        signo_marte = marte_obj.sign       # <-- NOVO
 
-        # === PASSO 2: A TRADUÇÃO SCII (com 'requests') ===
+        # === PASSO 2: A TRADUÇÃO SCII (A Função Auxiliar) ===
         
-        # === PASSO 3: RETORNAR O MAPA DE ALMA COMPLETO ===
+        # (A função 'traduzir_arquetipo_requests' permanece a mesma)
+        def traduzir_arquetipo_requests(nome_arquetipo):
+            try:
+                headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+                
+                url_arq = f"{SUPABASE_URL}/rest/v1/arquetipos"
+                params_arq = {'nome_arquetipo': f'eq.{nome_arquetipo}', 'select': 'id'}
+                resp_arq = requests.get(url_arq, headers=headers, params=params_arq)
+                resp_arq.raise_for_status() 
+                data_arq = resp_arq.json()
+                if not data_arq:
+                    return {"erro": f"Arquétipo '{nome_arquetipo}' não encontrado no SCII."}
+                arquetipo_id = data_arq[0]['id']
+
+                url_corr = f"{SUPABASE_URL}/rest/v1/scii_correspondencias"
+                params_corr = {'arquetipo_id': f'eq.{arquetipo_id}', 'select': 'letra_id'}
+                resp_corr = requests.get(url_corr, headers=headers, params=params_corr)
+                resp_corr.raise_for_status()
+                data_corr = resp_corr.json()
+                if not data_corr:
+                    return {"erro": f"Correspondência SCII para '{nome_arquetipo}' não encontrada."}
+                letra_id = data_corr[0]['letra_id']
+
+                url_letra = f"{SUPABASE_URL}/rest/v1/letras"
+                params_letra = {'id': f'eq.{letra_id}', 'select': 'nome_letra,pictografia,acao_espiritual'}
+                resp_letra = requests.get(url_letra, headers=headers, params=params_letra)
+                resp_letra.raise_for_status()
+                data_letra = resp_letra.json()
+                if not data_letra:
+                    return {"erro": f"Letra ID '{letra_id}' não encontrada."}
+                
+                return data_letra[0] 
+            
+            except Exception as e:
+                return {"erro": f"Erro na tradução SCII (requests): {str(e)}"}
+
+        # === PASSO 3: RETORNAR O MAPA DE ALMA COMPLETO (Expandido) ===
         return {
             "nome": pessoa.nome,
             "diagnostico_astrologico": {
                 "sol": f"{signo_sol} em Casa {sol_obj.house}",
                 "lua": f"{signo_lua} em Casa {lua_obj.house}",
-                "ascendente": signo_asc
+                "ascendente": signo_asc,
+                "mercurio": f"{signo_mercurio} em Casa {mercurio_obj.house}", # <-- NOVO
+                "marte": f"{signo_marte} em Casa {marte_obj.house}"        # <-- NOVO
             },
             "diagnostico_scii_gnose": {
                 "sol_letra": traduzir_arquetipo_requests(signo_sol),
                 "lua_letra": traduzir_arquetipo_requests(signo_lua),
-                "ascendente_letra": traduzir_arquetipo_requests(signo_asc)
+                "ascendente_letra": traduzir_arquetipo_requests(signo_asc),
+                "mercurio_letra": traduzir_arquetipo_requests(signo_mercurio), # <-- NOVO
+                "marte_letra": traduzir_arquetipo_requests(signo_marte)        # <-- NOVO
             }
         }
     
