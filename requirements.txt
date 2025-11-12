@@ -1,7 +1,7 @@
 fastapi
 uvicorn
+supabase
 python-dotenv
 python-multipart
 flatlib
-pyswisseph
-requests
+swisseph
