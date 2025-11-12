@@ -184,41 +184,7 @@ def gerar_mapa_alma(pessoa: PessoaInput):
 
         # === PASSO 2: A TRADUÇÃO SCII (A Função Auxiliar) ===
         
-        # (A função 'traduzir_arquetipo_requests' permanece a mesma)
-        def traduzir_arquetipo_requests(nome_arquetipo):
-            try:
-                headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
-                
-                url_arq = f"{SUPABASE_URL}/rest/v1/arquetipos"
-                params_arq = {'nome_arquetipo': f'eq.{nome_arquetipo}', 'select': 'id'}
-                resp_arq = requests.get(url_arq, headers=headers, params=params_arq)
-                resp_arq.raise_for_status() 
-                data_arq = resp_arq.json()
-                if not data_arq:
-                    return {"erro": f"Arquétipo '{nome_arquetipo}' não encontrado no SCII."}
-                arquetipo_id = data_arq[0]['id']
 
-                url_corr = f"{SUPABASE_URL}/rest/v1/scii_correspondencias"
-                params_corr = {'arquetipo_id': f'eq.{arquetipo_id}', 'select': 'letra_id'}
-                resp_corr = requests.get(url_corr, headers=headers, params=params_corr)
-                resp_corr.raise_for_status()
-                data_corr = resp_corr.json()
-                if not data_corr:
-                    return {"erro": f"Correspondência SCII para '{nome_arquetipo}' não encontrada."}
-                letra_id = data_corr[0]['letra_id']
-
-                url_letra = f"{SUPABASE_URL}/rest/v1/letras"
-                params_letra = {'id': f'eq.{letra_id}', 'select': 'nome_letra,pictografia,acao_espiritual'}
-                resp_letra = requests.get(url_letra, headers=headers, params=params_letra)
-                resp_letra.raise_for_status()
-                data_letra = resp_letra.json()
-                if not data_letra:
-                    return {"erro": f"Letra ID '{letra_id}' não encontrada."}
-                
-                return data_letra[0] 
-            
-            except Exception as e:
-                return {"erro": f"Erro na tradução SCII (requests): {str(e)}"}
 
         # === PASSO 3: RETORNAR O MAPA DE ALMA COMPLETO (Expandido) ===
         return {
