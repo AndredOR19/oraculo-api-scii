@@ -23,7 +23,7 @@ from pydantic import BaseModel
 from flatlib.datetime import Datetime
 from flatlib.geopos import GeoPos
 from flatlib.chart import Chart
-from flatlib.objects import Sun, Moon, Ascendant, Mercury, Mars, Venus, Jupiter
+from flatlib.objects import Sun, Moon, Ascendant, Mercury, Mars, Venus, Jupiter, Saturn, Uranus, Neptune, Pluto
 
 # --- FIX 2: CARREGAR CHAVES DO SUPABASE ---
 load_dotenv() 
@@ -141,11 +141,11 @@ import traceback
 
 # ... (rest of the file)
 
-# Endpoint Mapa de Alma (Motor Astrológico + Fusão SCII V4)
+# Endpoint Mapa de Alma (Motor Astrológico + Fusão SCII V5 - COMPLETO)
 @app.post("/gerar-mapa-alma")
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
-        # === PASSO 1: CÁLCULO ASTROLÓGICO (Expandido) ===
+        # === PASSO 1: CÁLCULO ASTROLÓGICO (COMPLETO) ===
         data_str = f"{pessoa.ano}/{pessoa.mes}/{pessoa.dia}"
         hora_str = f"{pessoa.hora}:{pessoa.minuto}"
         lat = '-28.51' # Vacaria Lat
@@ -161,8 +161,12 @@ def gerar_mapa_alma(pessoa: PessoaInput):
         asc_obj = chart.get(Ascendant)
         mercurio_obj = chart.get(Mercury)
         marte_obj = chart.get(Mars)
-        venus_obj = chart.get(Venus)     # <-- NOVO
-        jupiter_obj = chart.get(Jupiter) # <-- NOVO
+        venus_obj = chart.get(Venus)
+        jupiter_obj = chart.get(Jupiter)
+        saturno_obj = chart.get(Saturn) # <-- NOVO
+        urano_obj = chart.get(Uranus)     # <-- NOVO
+        netuno_obj = chart.get(Neptune)   # <-- NOVO
+        plutao_obj = chart.get(Pluto)     # <-- NOVO
 
         # Nomes dos arquétipos que vamos procurar no Supabase
         signo_sol = sol_obj.sign
@@ -170,8 +174,13 @@ def gerar_mapa_alma(pessoa: PessoaInput):
         signo_asc = asc_obj.sign
         signo_mercurio = mercurio_obj.sign
         signo_marte = marte_obj.sign
-        signo_venus = venus_obj.sign     # <-- NOVO
-        signo_jupiter = jupiter_obj.sign # <-- NOVO
+        signo_venus = venus_obj.sign
+        signo_jupiter = jupiter_obj.sign
+        signo_saturno = saturno_obj.sign # <-- NOVO
+        signo_urano = urano_obj.sign     # <-- NOVO
+        signo_netuno = netuno_obj.sign   # <-- NOVO
+        signo_plutao = plutao_obj.sign   # <-- NOVO
+
 
         # === PASSO 2: A TRADUÇÃO SCII (A Função Auxiliar) ===
         
@@ -220,8 +229,12 @@ def gerar_mapa_alma(pessoa: PessoaInput):
                 "ascendente": signo_asc,
                 "mercurio": f"{signo_mercurio} em Casa {mercurio_obj.house}",
                 "marte": f"{signo_marte} em Casa {marte_obj.house}",
-                "venus": f"{signo_venus} em Casa {venus_obj.house}",     # <-- NOVO
-                "jupiter": f"{signo_jupiter} em Casa {jupiter_obj.house}" # <-- NOVO
+                "venus": f"{signo_venus} em Casa {venus_obj.house}",
+                "jupiter": f"{signo_jupiter} em Casa {jupiter_obj.house}",
+                "saturno": f"{signo_saturno} em Casa {saturno_obj.house}", # <-- NOVO
+                "urano": f"{signo_urano} em Casa {urano_obj.house}",     # <-- NOVO
+                "netuno": f"{signo_netuno} em Casa {netuno_obj.house}",   # <-- NOVO
+                "plutao": f"{signo_plutao} em Casa {plutao_obj.house}"    # <-- NOVO
             },
             "diagnostico_scii_gnose": {
                 "sol_letra": traduzir_arquetipo_requests(signo_sol),
@@ -229,8 +242,12 @@ def gerar_mapa_alma(pessoa: PessoaInput):
                 "ascendente_letra": traduzir_arquetipo_requests(signo_asc),
                 "mercurio_letra": traduzir_arquetipo_requests(signo_mercurio),
                 "marte_letra": traduzir_arquetipo_requests(signo_marte),
-                "venus_letra": traduzir_arquetipo_requests(signo_venus),     # <-- NOVO
-                "jupiter_letra": traduzir_arquetipo_requests(signo_jupiter) # <-- NOVO
+                "venus_letra": traduzir_arquetipo_requests(signo_venus),
+                "jupiter_letra": traduzir_arquetipo_requests(signo_jupiter),
+                "saturno_letra": traduzir_arquetipo_requests(signo_saturno), # <-- NOVO
+                "urano_letra": traduzir_arquetipo_requests(signo_urano),     # <-- NOVO
+                "netuno_letra": traduzir_arquetipo_requests(signo_netuno),   # <-- NOVO
+                "plutao_letra": traduzir_arquetipo_requests(signo_plutao)    # <-- NOVO
             }
         }
     
