@@ -1,13 +1,24 @@
 import os
+import sys
+
+# CRITICAL: Configurar ambiente ANTES de qualquer import do Kerykeion
+os.environ['KERYKEION_CACHE_DIR'] = '/tmp/kerykeion_cache'
+os.environ['KERYKEION_GEONAMES_USERNAME'] = 'demo'  # Username padrão (2000 req/hora)
+
+# Criar diretório de cache se não existir
+cache_dir = '/tmp/kerykeion_cache'
+if not os.path.exists(cache_dir):
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+    except Exception as e:
+        print(f"Aviso: Não foi possível criar cache: {e}", file=sys.stderr)
+
+# AGORA podemos importar Kerykeion
 import requests
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
-
-# CRITICAL: Desabilitar cache do Kerykeion ANTES de importar
-os.environ['KERYKEION_CACHE_DIR'] = '/tmp'  # Vercel permite escrita em /tmp
-
 from kerykeion import AstrologicalSubject
 
 # Carregar variáveis de ambiente
@@ -43,7 +54,6 @@ def traduzir_arquetipo_requests(nome_arquetipo):
     try:
         headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
         
-        # 1. Buscar arquétipo
         url_arq = f"{SUPABASE_URL}/rest/v1/arquetipos"
         params_arq = {'nome_arquetipo': f'eq.{nome_arquetipo}', 'select': 'id'}
         resp_arq = requests.get(url_arq, headers=headers, params=params_arq)
@@ -55,7 +65,6 @@ def traduzir_arquetipo_requests(nome_arquetipo):
         
         arquetipo_id = data_arq[0]['id']
 
-        # 2. Buscar correspondência
         url_corr = f"{SUPABASE_URL}/rest/v1/scii_correspondencias"
         params_corr = {'arquetipo_id': f'eq.{arquetipo_id}', 'select': 'letra_id'}
         resp_corr = requests.get(url_corr, headers=headers, params=params_corr)
@@ -67,7 +76,6 @@ def traduzir_arquetipo_requests(nome_arquetipo):
         
         letra_id = data_corr[0]['letra_id']
 
-        # 3. Buscar letra
         url_letra = f"{SUPABASE_URL}/rest/v1/letras"
         params_letra = {'id': f'eq.{letra_id}', 'select': 'nome_letra,pictografia,acao_espiritual'}
         resp_letra = requests.get(url_letra, headers=headers, params=params_letra)
@@ -121,6 +129,7 @@ def get_scii():
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
         # Criar o sujeito astrológico com Kerykeion
+        # Kerykeion agora usará /tmp/kerykeion_cache
         subject = AstrologicalSubject(
             pessoa.nome,
             pessoa.ano,
@@ -132,10 +141,10 @@ def gerar_mapa_alma(pessoa: PessoaInput):
             pessoa.pais
         )
         
-        # Extrair os signos (Kerykeion já calcula tudo)
+        # Extrair os signos
         signo_sol = subject.sun["sign"]
         signo_lua = subject.moon["sign"]
-        signo_asc = subject.first_house["sign"]  # Ascendente
+        signo_asc = subject.first_house["sign"]
         signo_mercurio = subject.mercury["sign"]
         signo_venus = subject.venus["sign"]
         signo_marte = subject.mars["sign"]
@@ -145,7 +154,6 @@ def gerar_mapa_alma(pessoa: PessoaInput):
         signo_netuno = subject.neptune["sign"]
         signo_plutao = subject.pluto["sign"]
         
-        # Retornar o diagnóstico completo
         return {
             "nome": pessoa.nome,
             "diagnostico_astrologico": {
