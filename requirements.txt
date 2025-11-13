@@ -1,7 +1,6 @@
 fastapi
 uvicorn
-supabase
 python-dotenv
 python-multipart
-flatlib
 requests
+kerykeion

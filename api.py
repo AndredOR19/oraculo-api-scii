@@ -1,40 +1,20 @@
 import os
-import sys 
-import requests # O NOVO CLIENTE DE API
-
-# --- FIX 1: CONFIGURAÇÃO DE CACHE (flatlib) ---
-from flatlib.ephem import swe 
-FLATLIB_CACHE_PATH = '/tmp/flatlib_cache'
-if not os.path.exists(FLATLIB_CACHE_PATH):
-    try:
-        os.makedirs(FLATLIB_CACHE_PATH, exist_ok=True)
-    except OSError as e:
-        if e.errno != 17:
-            print(f"Erro ao criar diretório de cache: {e}", file=sys.stderr)
-swe.swe_set_ephe_path(FLATLIB_CACHE_PATH)
-# --- FIM DO FIX 1 ---
-
-# --- IMPORTAÇÕES (são seguras) ---
+import requests
 from fastapi import FastAPI
-# REMOVEMOS 'from supabase...'
-from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from flatlib.datetime import Datetime
-from flatlib.geopos import GeoPos
-from flatlib.chart import Chart
-from flatlib.objects import Sun, Moon, Ascendant, Mercury, Mars, Venus, Jupiter, Saturn, Uranus, Neptune, Pluto
+from dotenv import load_dotenv
+from kerykeion import AstrologicalSubject
 
-# --- FIX 2: CARREGAR CHAVES DO SUPABASE ---
+# Carregar variáveis de ambiente
 load_dotenv() 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-# --- FIM DO FIX 2 ---
 
-# --- CRIAÇÃO DO APP ---
+# Criar app FastAPI
 app = FastAPI()
 
-# --- FIX 3: ADICIONAR CORS ---
+# Configurar CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -43,7 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- MODELO DE INPUT ---
+# Modelo de entrada
 class PessoaInput(BaseModel):
     nome: str
     ano: int
@@ -54,56 +34,55 @@ class PessoaInput(BaseModel):
     cidade: str
     pais: str
 
-# --- ENDPOINTS ---
-
-# Função auxiliar (O NOVO TRADUTOR SCII com 'requests')
+# Função para traduzir arquétipos
 def traduzir_arquetipo_requests(nome_arquetipo):
     try:
-        headers = {
-            "apikey": SUPABASE_KEY,
-            "Authorization": f"Bearer {SUPABASE_KEY}"
-        }
+        headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
         
-        # 1. Encontra o arquétipo no Supabase
+        # 1. Buscar arquétipo
         url_arq = f"{SUPABASE_URL}/rest/v1/arquetipos"
         params_arq = {'nome_arquetipo': f'eq.{nome_arquetipo}', 'select': 'id'}
         resp_arq = requests.get(url_arq, headers=headers, params=params_arq)
-        resp_arq.raise_for_status() # Lança erro se a chamada falhar
+        resp_arq.raise_for_status()
         data_arq = resp_arq.json()
+        
         if not data_arq:
             return {"erro": f"Arquétipo '{nome_arquetipo}' não encontrado no SCII."}
+        
         arquetipo_id = data_arq[0]['id']
 
-        # 2. Encontra a correspondência na malha SCII
+        # 2. Buscar correspondência
         url_corr = f"{SUPABASE_URL}/rest/v1/scii_correspondencias"
         params_corr = {'arquetipo_id': f'eq.{arquetipo_id}', 'select': 'letra_id'}
         resp_corr = requests.get(url_corr, headers=headers, params=params_corr)
         resp_corr.raise_for_status()
         data_corr = resp_corr.json()
+        
         if not data_corr:
             return {"erro": f"Correspondência SCII para '{nome_arquetipo}' não encontrada."}
+        
         letra_id = data_corr[0]['letra_id']
 
-        # 3. Busca a Gnose da Letra
+        # 3. Buscar letra
         url_letra = f"{SUPABASE_URL}/rest/v1/letras"
         params_letra = {'id': f'eq.{letra_id}', 'select': 'nome_letra,pictografia,acao_espiritual'}
         resp_letra = requests.get(url_letra, headers=headers, params=params_letra)
         resp_letra.raise_for_status()
         data_letra = resp_letra.json()
+        
         if not data_letra:
             return {"erro": f"Letra ID '{letra_id}' não encontrada."}
             
-        return data_letra[0] 
+        return data_letra[0]
     
     except Exception as e:
-        return {"erro": f"Erro na tradução SCII (requests): {str(e)}"}
+        return {"erro": f"Erro na tradução SCII: {str(e)}"}
 
-
+# Endpoints
 @app.get("/")
 def read_root():
     return {"message": "Bem-vindo ao Cérebro da Kabbalah das Águas Primordiais. O Mestre está consciente e íntegro."}
 
-# Endpoint Letras (com 'requests')
 @app.get("/letras")
 def get_letras():
     try:
@@ -114,7 +93,6 @@ def get_letras():
     except Exception as e:
         return {"erro": str(e)}
 
-# Endpoint Arquetipos (com 'requests')
 @app.get("/arquetipos")
 def get_arquetipos():
     try:
@@ -125,7 +103,6 @@ def get_arquetipos():
     except Exception as e:
         return {"erro": str(e)}
 
-# Endpoint SCII (com 'requests')
 @app.get("/scii")
 def get_scii():
     try:
@@ -136,84 +113,62 @@ def get_scii():
     except Exception as e:
         return {"erro": str(e)}
 
-
-import traceback
-
-# ... (rest of the file)
-
-# Endpoint Mapa de Alma (Motor Astrológico + Fusão SCII V5 - COMPLETO)
 @app.post("/gerar-mapa-alma")
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
-        # === PASSO 1: CÁLCULO ASTROLÓGICO (COMPLETO) ===
-        data_str = f"{pessoa.ano}/{pessoa.mes}/{pessoa.dia}"
-        hora_str = f"{pessoa.hora}:{pessoa.minuto}"
-        lat = '-28.51' # Vacaria Lat
-        lon = '-50.93' # Vacaria Lon
-        fuso = -3.0
-
-        data = Datetime(data_str, hora_str, fuso)
-        pos = GeoPos(lat, lon)
-        chart = Chart(data, pos)
+        # Criar o sujeito astrológico com Kerykeion
+        subject = AstrologicalSubject(
+            pessoa.nome,
+            pessoa.ano,
+            pessoa.mes,
+            pessoa.dia,
+            pessoa.hora,
+            pessoa.minuto,
+            pessoa.cidade,
+            pessoa.pais
+        )
         
-        sol_obj = chart.get(Sun)
-        lua_obj = chart.get(Moon)
-        asc_obj = chart.get(Ascendant)
-        mercurio_obj = chart.get(Mercury)
-        marte_obj = chart.get(Mars)
-        venus_obj = chart.get(Venus)
-        jupiter_obj = chart.get(Jupiter)
-        saturno_obj = chart.get(Saturn) # <-- NOVO
-        urano_obj = chart.get(Uranus)     # <-- NOVO
-        netuno_obj = chart.get(Neptune)   # <-- NOVO
-        plutao_obj = chart.get(Pluto)     # <-- NOVO
-
-        # Nomes dos arquétipos que vamos procurar no Supabase
-        signo_sol = sol_obj.sign
-        signo_lua = lua_obj.sign
-        signo_asc = asc_obj.sign
-        signo_mercurio = mercurio_obj.sign
-        signo_marte = marte_obj.sign
-        signo_venus = venus_obj.sign
-        signo_jupiter = jupiter_obj.sign
-        signo_saturno = saturno_obj.sign # <-- NOVO
-        signo_urano = urano_obj.sign     # <-- NOVO
-        signo_netuno = netuno_obj.sign   # <-- NOVO
-        signo_plutao = plutao_obj.sign   # <-- NOVO
-
-
-        # === PASSO 2: A TRADUÇÃO SCII (A Função Auxiliar) ===
+        # Extrair os signos (Kerykeion já calcula tudo)
+        signo_sol = subject.sun["sign"]
+        signo_lua = subject.moon["sign"]
+        signo_asc = subject.first_house["sign"]  # Ascendente
+        signo_mercurio = subject.mercury["sign"]
+        signo_venus = subject.venus["sign"]
+        signo_marte = subject.mars["sign"]
+        signo_jupiter = subject.jupiter["sign"]
+        signo_saturno = subject.saturn["sign"]
+        signo_urano = subject.uranus["sign"]
+        signo_netuno = subject.neptune["sign"]
+        signo_plutao = subject.pluto["sign"]
         
-
-
-        # === PASSO 3: RETORNAR O MAPA DE ALMA COMPLETO (Expandido) ===
+        # Retornar o diagnóstico completo
         return {
             "nome": pessoa.nome,
             "diagnostico_astrologico": {
-                "sol": f"{signo_sol} em Casa {sol_obj.house}",
-                "lua": f"{signo_lua} em Casa {lua_obj.house}",
+                "sol": f"{signo_sol} em Casa {subject.sun['house']}",
+                "lua": f"{signo_lua} em Casa {subject.moon['house']}",
                 "ascendente": signo_asc,
-                "mercurio": f"{signo_mercurio} em Casa {mercurio_obj.house}",
-                "marte": f"{signo_marte} em Casa {marte_obj.house}",
-                "venus": f"{signo_venus} em Casa {venus_obj.house}",
-                "jupiter": f"{signo_jupiter} em Casa {jupiter_obj.house}",
-                "saturno": f"{signo_saturno} em Casa {saturno_obj.house}", # <-- NOVO
-                "urano": f"{signo_urano} em Casa {urano_obj.house}",     # <-- NOVO
-                "netuno": f"{signo_netuno} em Casa {netuno_obj.house}",   # <-- NOVO
-                "plutao": f"{signo_plutao} em Casa {plutao_obj.house}"    # <-- NOVO
+                "mercurio": f"{signo_mercurio} em Casa {subject.mercury['house']}",
+                "venus": f"{signo_venus} em Casa {subject.venus['house']}",
+                "marte": f"{signo_marte} em Casa {subject.mars['house']}",
+                "jupiter": f"{signo_jupiter} em Casa {subject.jupiter['house']}",
+                "saturno": f"{signo_saturno} em Casa {subject.saturn['house']}",
+                "urano": f"{signo_urano} em Casa {subject.uranus['house']}",
+                "netuno": f"{signo_netuno} em Casa {subject.neptune['house']}",
+                "plutao": f"{signo_plutao} em Casa {subject.pluto['house']}"
             },
             "diagnostico_scii_gnose": {
                 "sol_letra": traduzir_arquetipo_requests(signo_sol),
                 "lua_letra": traduzir_arquetipo_requests(signo_lua),
                 "ascendente_letra": traduzir_arquetipo_requests(signo_asc),
                 "mercurio_letra": traduzir_arquetipo_requests(signo_mercurio),
-                "marte_letra": traduzir_arquetipo_requests(signo_marte),
                 "venus_letra": traduzir_arquetipo_requests(signo_venus),
+                "marte_letra": traduzir_arquetipo_requests(signo_marte),
                 "jupiter_letra": traduzir_arquetipo_requests(signo_jupiter),
-                "saturno_letra": traduzir_arquetipo_requests(signo_saturno), # <-- NOVO
-                "urano_letra": traduzir_arquetipo_requests(signo_urano),     # <-- NOVO
-                "netuno_letra": traduzir_arquetipo_requests(signo_netuno),   # <-- NOVO
-                "plutao_letra": traduzir_arquetipo_requests(signo_plutao)    # <-- NOVO
+                "saturno_letra": traduzir_arquetipo_requests(signo_saturno),
+                "urano_letra": traduzir_arquetipo_requests(signo_urano),
+                "netuno_letra": traduzir_arquetipo_requests(signo_netuno),
+                "plutao_letra": traduzir_arquetipo_requests(signo_plutao)
             }
         }
     
