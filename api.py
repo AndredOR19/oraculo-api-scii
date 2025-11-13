@@ -1,52 +1,23 @@
 import os
 import sys
 
-# CRITICAL: Monkey-patch do pathlib ANTES de qualquer import
-# Isso força TODOS os paths do Kerykeion para /tmp
-import pathlib
-_original_path_init = pathlib.Path.__init__
-
-def _patched_path_init(self, *args, **kwargs):
-    _original_path_init(self, *args, **kwargs)
-    # Se o path contém 'cache' e aponta para /var/task, redireciona para /tmp
-    if hasattr(self, '_str'):
-        path_str = str(self)
-        if 'cache' in path_str and path_str.startswith('/var/task'):
-            object.__setattr__(self, '_str', path_str.replace('/var/task', '/tmp'))
-
-pathlib.Path.__init__ = _patched_path_init
-
-# Configurar variáveis de ambiente
+# Configurar ambiente
 os.environ['HOME'] = '/tmp'
-os.environ['KERYKEION_CACHE_DIR'] = '/tmp/kerykeion_cache'
-os.environ['KERYKEION_GEONAMES_USERNAME'] = 'demo'
 
-# Criar diretório de cache
-cache_dir = '/tmp/kerykeion_cache'
-try:
-    os.makedirs(cache_dir, exist_ok=True)
-except:
-    pass
-
-# AGORA importar as bibliotecas
 import requests
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
-
-# Importar Kerykeion COM o patch aplicado
 from kerykeion import AstrologicalSubject
 
-# Carregar variáveis de ambiente
+# Carregar variáveis
 load_dotenv() 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# Criar app FastAPI
 app = FastAPI()
 
-# Configurar CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -55,7 +26,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Modelo de entrada
 class PessoaInput(BaseModel):
     nome: str
     ano: int
@@ -66,7 +36,6 @@ class PessoaInput(BaseModel):
     cidade: str
     pais: str
 
-# Função para traduzir arquétipos
 def traduzir_arquetipo_requests(nome_arquetipo):
     try:
         headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
@@ -107,7 +76,6 @@ def traduzir_arquetipo_requests(nome_arquetipo):
     except Exception as e:
         return {"erro": f"Erro na tradução SCII: {str(e)}"}
 
-# Endpoints
 @app.get("/")
 def read_root():
     return {"message": "Bem-vindo ao Cérebro da Kabbalah das Águas Primordiais. O Mestre está consciente e íntegro."}
@@ -145,7 +113,8 @@ def get_scii():
 @app.post("/gerar-mapa-alma")
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
-        # Criar o sujeito astrológico
+        # CRITICAL: Passar coordenadas diretamente (Vacaria, RS, Brasil)
+        # Isso evita completamente o uso do Geonames e cache
         subject = AstrologicalSubject(
             pessoa.nome,
             pessoa.ano,
@@ -153,8 +122,11 @@ def gerar_mapa_alma(pessoa: PessoaInput):
             pessoa.dia,
             pessoa.hora,
             pessoa.minuto,
-            pessoa.cidade,
-            pessoa.pais
+            lat=-28.51,      # Latitude de Vacaria
+            lng=-50.93,      # Longitude de Vacaria
+            tz_str="America/Sao_Paulo",  # Fuso horário
+            city=pessoa.cidade,
+            nation=pessoa.pais
         )
         
         # Extrair os signos
