@@ -1,6 +1,9 @@
 fastapi
 uvicorn
+supabase
 python-dotenv
 python-multipart
 requests
-kerykeion
+astropy
+pylunar
+pytz
