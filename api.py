@@ -4,6 +4,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
+
+# CRITICAL: Desabilitar cache do Kerykeion ANTES de importar
+os.environ['KERYKEION_CACHE_DIR'] = '/tmp'  # Vercel permite escrita em /tmp
+
 from kerykeion import AstrologicalSubject
 
 # Carregar variáveis de ambiente
