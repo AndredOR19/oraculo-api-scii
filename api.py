@@ -1,24 +1,37 @@
 import os
 import sys 
-import requests # O CLIENTE DE API
-from datetime import datetime
-import pytz # Para Fusos Horários
 
-# --- FIX 1: SEM CONFIGURAÇÃO DE CACHE (astropy/pylunar não precisam) ---
-# (Removemos o bloco de cache do flatlib/kerykeion)
+# --- FIX 1: CONFIGURAÇÃO DE CACHE (Para flatlib) ---
+try:
+    from flatlib.ephem import swe 
+except ImportError as e:
+    print(f"Erro ao importar 'swe' do flatlib: {e}", file=sys.stderr)
+    sys.exit(1)
 
-# --- IMPORTAÇÕES (são seguras) ---
+FLATLIB_CACHE_PATH = '/tmp/flatlib_cache'
+if not os.path.exists(FLATLIB_CACHE_PATH):
+    try:
+        os.makedirs(FLATLIB_CACHE_PATH, exist_ok=True)
+    except OSError as e:
+        if e.errno != 17:
+            print(f"Erro ao criar diretório de cache: {e}", file=sys.stderr)
+
+# --- O COMANDO EXPLÍCITO (A Solução Definitiva 4.0) ---
+swe.swe_set_ephe_path(FLATLIB_CACHE_PATH)
+# --- FIM DO FIX 1 ---
+
+
+# --- AGORA O RESTO DAS IMPORTAÇÕES (são seguras) ---
+import requests
 from fastapi import FastAPI
-# (Removemos a importação do supabase-py, já que usamos 'requests')
+from supabase import create_client, Client
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
-# --- IMPORTAÇÕES DO NOVO MOTOR (astropy/pylunar) ---
-from astropy.time import Time
-from astropy.coordinates import get_sun, get_moon, EarthLocation, SkyCoord
-from astropy import units as u
-import pylunar # Para a fase da Lua (e signo)
+from flatlib.datetime import Datetime
+from flatlib.geopos import GeoPos
+from flatlib.chart import Chart
+from flatlib.objects import Sun, Moon, Ascendant, Mercury, Mars, Venus, Jupiter, Saturn, Uranus, Neptune, Pluto
 
 # --- FIX 2: CARREGAR CHAVES DO SUPABASE ---
 load_dotenv() 
@@ -46,7 +59,7 @@ class PessoaInput(BaseModel):
     dia: int
     hora: int
     minuto: int
-    cidade: str
+    cidade: str # Flatlib não usa cidade, mas a lat/lon
     pais: str
 
 # --- ENDPOINTS ---
@@ -125,42 +138,75 @@ def get_scii():
         return {"erro": str(e)}
 
 
-# --- Endpoint Mapa de Alma (com o NOVO MOTOR: astropy/pylunar) ---
+# --- Endpoint Mapa de Alma (com o NOVO MOTOR: flatlib) ---
 @app.post("/gerar-mapa-alma")
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
         # 1. Configurar os dados de entrada
-        fuso = pytz.timezone('America/Sao_Paulo')
-        dt = fuso.localize(datetime(pessoa.ano, pessoa.mes, pessoa.dia, pessoa.hora, pessoa.minuto))
-        
-        lat = '-28.51' * u.deg
-        lon = '-50.93' * u.deg
-        local = EarthLocation(lat=lat, lon=lon)
-        
-        tempo = Time(dt)
+        data_str = f"{pessoa.ano}/{pessoa.mes}/{pessoa.dia}"
+        hora_str = f"{pessoa.hora}:{pessoa.minuto}"
+        lat = '-28.51' # Vacaria Lat
+        lon = '-50.93' # Vacaria Lon
+        fuso = -3.0
 
-        # 2. Gerar o mapa (Sol)
-        sol_coords = get_sun(tempo).transform_to('geocentrictrueecliptic')
-        # (Lógica para converter coordenadas eclípticas em signo)
-        signos = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem", "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"]
-        signo_sol = signos[int(sol_coords.lon.degree / 30)]
-
-        # 3. Gerar o mapa (Lua)
-        lua_coords = get_moon(tempo, local).transform_to('geocentrictrueecliptic')
-        signo_lua = signos[int(lua_coords.lon.degree / 30)]
+        data = Datetime(data_str, hora_str, fuso)
+        pos = GeoPos(lat, lon)
+        chart = Chart(data, pos)
         
-        # 4. Retorna o diagnóstico (Simplificado, sem Ascendente por enquanto)
+        # 2. Obter os dados (o flatlib chama de 'objects')
+        sol_obj = chart.get(Sun)
+        lua_obj = chart.get(Moon)
+        asc_obj = chart.get(Ascendant)
+        mercurio_obj = chart.get(Mercury)
+        marte_obj = chart.get(Mars)
+        venus_obj = chart.get(Venus)
+        jupiter_obj = chart.get(Jupiter)
+        saturno_obj = chart.get(Saturn)
+        urano_obj = chart.get(Uranus)
+        netuno_obj = chart.get(Neptune)
+        plutao_obj = chart.get(Pluto)
+
+        # Nomes dos arquétipos que vamos procurar no Supabase
+        signo_sol = sol_obj.sign
+        signo_lua = lua_obj.sign
+        signo_asc = asc_obj.sign
+        signo_mercurio = mercurio_obj.sign
+        signo_marte = marte_obj.sign
+        signo_venus = venus_obj.sign
+        signo_jupiter = jupiter_obj.sign
+        signo_saturno = saturno_obj.sign
+        signo_urano = urano_obj.sign
+        signo_netuno = netuno_obj.sign
+        signo_plutao = plutao_obj.sign
+
+        # === PASSO 3: RETORNAR O MAPA DE ALMA COMPLETO ===
         return {
             "nome": pessoa.nome,
             "diagnostico_astrologico": {
-                "sol": signo_sol,
-                "lua": signo_lua,
-                "ascendente": "Em desenvolvimento (Astropy)"
+                "sol": f"{signo_sol} em Casa {sol_obj.house}",
+                "lua": f"{signo_lua} em Casa {lua_obj.house}",
+                "ascendente": signo_asc,
+                "mercurio": f"{signo_mercurio} em Casa {mercurio_obj.house}",
+                "marte": f"{signo_marte} em Casa {marte_obj.house}",
+                "venus": f"{signo_venus} em Casa {venus_obj.house}",
+                "jupiter": f"{signo_jupiter} em Casa {jupiter_obj.house}",
+                "saturno": f"{signo_saturno} em Casa {saturno_obj.house}",
+                "urano": f"{signo_urano} em Casa {urano_obj.house}",
+                "netuno": f"{signo_netuno} em Casa {netuno_obj.house}",
+                "plutao": f"{signo_plutao} em Casa {plutao_obj.house}"
             },
             "diagnostico_scii_gnose": {
                 "sol_letra": traduzir_arquetipo_requests(signo_sol),
                 "lua_letra": traduzir_arquetipo_requests(signo_lua),
-                "ascendente_letra": {"erro": "Ascendente em cálculo."}
+                "ascendente_letra": traduzir_arquetipo_requests(signo_asc),
+                "mercurio_letra": traduzir_arquetipo_requests(signo_mercurio),
+                "marte_letra": traduzir_arquetipo_requests(signo_marte),
+                "venus_letra": traduzir_arquetipo_requests(signo_venus),
+                "jupiter_letra": traduzir_arquetipo_requests(signo_jupiter),
+                "saturno_letra": traduzir_arquetipo_requests(signo_saturno),
+                "urano_letra": traduzir_arquetipo_requests(signo_urano),
+                "netuno_letra": traduzir_arquetipo_requests(signo_netuno),
+                "plutao_letra": traduzir_arquetipo_requests(signo_plutao)
             }
         }
     
