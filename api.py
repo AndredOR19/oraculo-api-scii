@@ -113,8 +113,22 @@ def get_scii():
 @app.post("/gerar-mapa-alma")
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
-        # CRITICAL: Passar coordenadas diretamente (Vacaria, RS, Brasil)
-        # Isso evita completamente o uso do Geonames e cache
+        # Dicionário de tradução de signos (abreviação → nome completo em português)
+        signos_map = {
+            "Ari": "Áries", "Tau": "Touro", "Gem": "Gêmeos",
+            "Can": "Câncer", "Leo": "Leão", "Vir": "Virgem",
+            "Lib": "Libra", "Sco": "Escorpião", "Sag": "Sagitário",
+            "Cap": "Capricórnio", "Aqu": "Aquário", "Pis": "Peixes"
+        }
+        
+        # Dicionário de tradução de casas
+        casas_map = {
+            "First_House": "1", "Second_House": "2", "Third_House": "3",
+            "Fourth_House": "4", "Fifth_House": "5", "Sixth_House": "6",
+            "Seventh_House": "7", "Eighth_House": "8", "Ninth_House": "9",
+            "Tenth_House": "10", "Eleventh_House": "11", "Twelfth_House": "12"
+        }
+        
         subject = AstrologicalSubject(
             pessoa.nome,
             pessoa.ano,
@@ -122,40 +136,52 @@ def gerar_mapa_alma(pessoa: PessoaInput):
             pessoa.dia,
             pessoa.hora,
             pessoa.minuto,
-            lat=-28.51,      # Latitude de Vacaria
-            lng=-50.93,      # Longitude de Vacaria
-            tz_str="America/Sao_Paulo",  # Fuso horário
+            lat=-28.51,
+            lng=-50.93,
+            tz_str="America/Sao_Paulo",
             city=pessoa.cidade,
             nation=pessoa.pais
         )
         
-        # Extrair os signos
-        signo_sol = subject.sun["sign"]
-        signo_lua = subject.moon["sign"]
-        signo_asc = subject.first_house["sign"]
-        signo_mercurio = subject.mercury["sign"]
-        signo_venus = subject.venus["sign"]
-        signo_marte = subject.mars["sign"]
-        signo_jupiter = subject.jupiter["sign"]
-        signo_saturno = subject.saturn["sign"]
-        signo_urano = subject.uranus["sign"]
-        signo_netuno = subject.neptune["sign"]
-        signo_plutao = subject.pluto["sign"]
+        # Extrair e traduzir os signos
+        signo_sol = signos_map.get(subject.sun["sign"], subject.sun["sign"])
+        signo_lua = signos_map.get(subject.moon["sign"], subject.moon["sign"])
+        signo_asc = signos_map.get(subject.first_house["sign"], subject.first_house["sign"])
+        signo_mercurio = signos_map.get(subject.mercury["sign"], subject.mercury["sign"])
+        signo_venus = signos_map.get(subject.venus["sign"], subject.venus["sign"])
+        signo_marte = signos_map.get(subject.mars["sign"], subject.mars["sign"])
+        signo_jupiter = signos_map.get(subject.jupiter["sign"], subject.jupiter["sign"])
+        signo_saturno = signos_map.get(subject.saturn["sign"], subject.saturn["sign"])
+        signo_urano = signos_map.get(subject.uranus["sign"], subject.uranus["sign"])
+        signo_netuno = signos_map.get(subject.neptune["sign"], subject.neptune["sign"])
+        signo_plutao = signos_map.get(subject.pluto["sign"], subject.pluto["sign"])
+        
+        # Extrair e traduzir as casas
+        casa_sol = casas_map.get(subject.sun["house"], subject.sun["house"])
+        casa_lua = casas_map.get(subject.moon["house"], subject.moon["house"])
+        casa_mercurio = casas_map.get(subject.mercury["house"], subject.mercury["house"])
+        casa_venus = casas_map.get(subject.venus["house"], subject.venus["house"])
+        casa_marte = casas_map.get(subject.mars["house"], subject.mars["house"])
+        casa_jupiter = casas_map.get(subject.jupiter["house"], subject.jupiter["house"])
+        casa_saturno = casas_map.get(subject.saturn["house"], subject.saturn["house"])
+        casa_urano = casas_map.get(subject.uranus["house"], subject.uranus["house"])
+        casa_netuno = casas_map.get(subject.neptune["house"], subject.neptune["house"])
+        casa_plutao = casas_map.get(subject.pluto["house"], subject.pluto["house"])
         
         return {
             "nome": pessoa.nome,
             "diagnostico_astrologico": {
-                "sol": f"{signo_sol} em Casa {subject.sun['house']}",
-                "lua": f"{signo_lua} em Casa {subject.moon['house']}",
+                "sol": f"{signo_sol} em Casa {casa_sol}",
+                "lua": f"{signo_lua} em Casa {casa_lua}",
                 "ascendente": signo_asc,
-                "mercurio": f"{signo_mercurio} em Casa {subject.mercury['house']}",
-                "venus": f"{signo_venus} em Casa {subject.venus['house']}",
-                "marte": f"{signo_marte} em Casa {subject.mars['house']}",
-                "jupiter": f"{signo_jupiter} em Casa {subject.jupiter['house']}",
-                "saturno": f"{signo_saturno} em Casa {subject.saturn['house']}",
-                "urano": f"{signo_urano} em Casa {subject.uranus['house']}",
-                "netuno": f"{signo_netuno} em Casa {subject.neptune['house']}",
-                "plutao": f"{signo_plutao} em Casa {subject.pluto['house']}"
+                "mercurio": f"{signo_mercurio} em Casa {casa_mercurio}",
+                "venus": f"{signo_venus} em Casa {casa_venus}",
+                "marte": f"{signo_marte} em Casa {casa_marte}",
+                "jupiter": f"{signo_jupiter} em Casa {casa_jupiter}",
+                "saturno": f"{signo_saturno} em Casa {casa_saturno}",
+                "urano": f"{signo_urano} em Casa {casa_urano}",
+                "netuno": f"{signo_netuno} em Casa {casa_netuno}",
+                "plutao": f"{signo_plutao} em Casa {casa_plutao}"
             },
             "diagnostico_scii_gnose": {
                 "sol_letra": traduzir_arquetipo_requests(signo_sol),
