@@ -1,19 +1,9 @@
 import os
 import sys
 
-# CRITICAL: Configurar ambiente ANTES de qualquer import do Kerykeion
-os.environ['KERYKEION_CACHE_DIR'] = '/tmp/kerykeion_cache'
-os.environ['KERYKEION_GEONAMES_USERNAME'] = 'demo'  # Username padrão (2000 req/hora)
+# Configurar ambiente
+os.environ['HOME'] = '/tmp'
 
-# Criar diretório de cache se não existir
-cache_dir = '/tmp/kerykeion_cache'
-if not os.path.exists(cache_dir):
-    try:
-        os.makedirs(cache_dir, exist_ok=True)
-    except Exception as e:
-        print(f"Aviso: Não foi possível criar cache: {e}", file=sys.stderr)
-
-# AGORA podemos importar Kerykeion
 import requests
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,15 +11,13 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from kerykeion import AstrologicalSubject
 
-# Carregar variáveis de ambiente
+# Carregar variáveis
 load_dotenv() 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# Criar app FastAPI
 app = FastAPI()
 
-# Configurar CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,7 +26,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Modelo de entrada
 class PessoaInput(BaseModel):
     nome: str
     ano: int
@@ -49,7 +36,6 @@ class PessoaInput(BaseModel):
     cidade: str
     pais: str
 
-# Função para traduzir arquétipos
 def traduzir_arquetipo_requests(nome_arquetipo):
     try:
         headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
@@ -90,7 +76,6 @@ def traduzir_arquetipo_requests(nome_arquetipo):
     except Exception as e:
         return {"erro": f"Erro na tradução SCII: {str(e)}"}
 
-# Endpoints
 @app.get("/")
 def read_root():
     return {"message": "Bem-vindo ao Cérebro da Kabbalah das Águas Primordiais. O Mestre está consciente e íntegro."}
@@ -128,8 +113,8 @@ def get_scii():
 @app.post("/gerar-mapa-alma")
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
-        # Criar o sujeito astrológico com Kerykeion
-        # Kerykeion agora usará /tmp/kerykeion_cache
+        # CRITICAL: Passar coordenadas diretamente (Vacaria, RS, Brasil)
+        # Isso evita completamente o uso do Geonames e cache
         subject = AstrologicalSubject(
             pessoa.nome,
             pessoa.ano,
@@ -137,8 +122,11 @@ def gerar_mapa_alma(pessoa: PessoaInput):
             pessoa.dia,
             pessoa.hora,
             pessoa.minuto,
-            pessoa.cidade,
-            pessoa.pais
+            lat=-28.51,      # Latitude de Vacaria
+            lng=-50.93,      # Longitude de Vacaria
+            tz_str="America/Sao_Paulo",  # Fuso horário
+            city=pessoa.cidade,
+            nation=pessoa.pais
         )
         
         # Extrair os signos
