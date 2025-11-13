@@ -4,4 +4,4 @@ supabase
 python-dotenv
 python-multipart
 requests
-flatlib
+kerykeion
