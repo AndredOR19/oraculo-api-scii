@@ -1,24 +1,41 @@
 import os
 import sys
 
-# CRITICAL: Configurar ambiente ANTES de qualquer import do Kerykeion
+# CRITICAL: Monkey-patch do pathlib ANTES de qualquer import
+# Isso força TODOS os paths do Kerykeion para /tmp
+import pathlib
+_original_path_init = pathlib.Path.__init__
+
+def _patched_path_init(self, *args, **kwargs):
+    _original_path_init(self, *args, **kwargs)
+    # Se o path contém 'cache' e aponta para /var/task, redireciona para /tmp
+    if hasattr(self, '_str'):
+        path_str = str(self)
+        if 'cache' in path_str and path_str.startswith('/var/task'):
+            object.__setattr__(self, '_str', path_str.replace('/var/task', '/tmp'))
+
+pathlib.Path.__init__ = _patched_path_init
+
+# Configurar variáveis de ambiente
+os.environ['HOME'] = '/tmp'
 os.environ['KERYKEION_CACHE_DIR'] = '/tmp/kerykeion_cache'
-os.environ['KERYKEION_GEONAMES_USERNAME'] = 'demo'  # Username padrão (2000 req/hora)
+os.environ['KERYKEION_GEONAMES_USERNAME'] = 'demo'
 
-# Criar diretório de cache se não existir
+# Criar diretório de cache
 cache_dir = '/tmp/kerykeion_cache'
-if not os.path.exists(cache_dir):
-    try:
-        os.makedirs(cache_dir, exist_ok=True)
-    except Exception as e:
-        print(f"Aviso: Não foi possível criar cache: {e}", file=sys.stderr)
+try:
+    os.makedirs(cache_dir, exist_ok=True)
+except:
+    pass
 
-# AGORA podemos importar Kerykeion
+# AGORA importar as bibliotecas
 import requests
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
+
+# Importar Kerykeion COM o patch aplicado
 from kerykeion import AstrologicalSubject
 
 # Carregar variáveis de ambiente
@@ -128,8 +145,7 @@ def get_scii():
 @app.post("/gerar-mapa-alma")
 def gerar_mapa_alma(pessoa: PessoaInput):
     try:
-        # Criar o sujeito astrológico com Kerykeion
-        # Kerykeion agora usará /tmp/kerykeion_cache
+        # Criar o sujeito astrológico
         subject = AstrologicalSubject(
             pessoa.nome,
             pessoa.ano,
