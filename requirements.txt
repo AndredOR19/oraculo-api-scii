@@ -1,6 +1,6 @@
-fastapi
-uvicorn
+requests
+flatlib
+pyswisseph
+google-generativeai
 python-dotenv
 python-multipart
-requests
-kerykeion
