@@ -2,5 +2,3 @@ requests
 flatlib
 pyswisseph
 google-generativeai
-python-dotenv
-python-multipart
